@@ -1,6 +1,6 @@
 "use client"
 import { DialogWrapper } from '@/components/shared/dialog-wrapper'
-import { ArrowRight, Layers, Plus, X } from 'lucide-react'
+import { ArrowRight, Layers, Loader, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import { Controller, useForm } from "react-hook-form"
 import {
@@ -11,10 +11,14 @@ import {
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { zodResolver } from "@hookform/resolvers/zod"
-import { workspaceSchema } from '@/app/schemas/workspace'
+import { createWorkspaceSchemaType, workspaceSchema } from '@/app/schemas/workspace'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { orpc } from '@/lib/orpc'
+import { toastError, toastSuccess } from '@/components/shared/toast'
 
 export const CreateWorkspace = () => {
     const [open, onOpenChange] = useState(false)
+    const queryClient = useQueryClient()
     //! 1-define the form (in React Hook Form):
     const form = useForm({
         resolver: zodResolver(workspaceSchema),
@@ -23,8 +27,34 @@ export const CreateWorkspace = () => {
         }
     })
 
+    //*-- define mutation to create a new workspace:
+    const createWorkspaceMutation = useMutation(
+        orpc.workspace.create.mutationOptions({
+            onSuccess: (newWorkspace) => {
+                console.log("newWorkspace:", newWorkspace)
+                toastSuccess({
+                    title: "Success!",
+                    description: `Worksapce ${newWorkspace.workspaceName} created Succesfully!`
+                })
+                queryClient.invalidateQueries({
+                    queryKey: orpc.workspace.list.queryKey()
+                })
+                form.reset();
+                onOpenChange(false); //* close thee dialog.
+            },
+            onError: () => {
+                toastError({
+                    title: "Error!",
+                    description: "Failed to create new Workspace, Please try again later!"
+                })
+                form.reset()
+            }
+        })
+    )
+
     //! 2- define the submit handler:
-    const onSubmit = () => {
+    const onSubmit = (values: createWorkspaceSchemaType) => {
+        createWorkspaceMutation.mutate(values)
         console.log("OnSubmit")
     }
 
@@ -96,9 +126,20 @@ export const CreateWorkspace = () => {
                         )}
                     />
                     <div className='flex items-center space-x-4 mt-5'>
-                        <Button size={"lg"} className='active:scale-90 bg-primary/30 hover:bg-primary/50 ring-2 ring-offset-0 ring-primary  transition-all duration-300' type='submit'>
-                            Create Workspace
-                            <ArrowRight className="size-4" />
+                        <Button disabled={createWorkspaceMutation.isPending} size={"lg"} className='active:scale-90 bg-primary/30 hover:bg-primary/50 ring-2 ring-offset-0 ring-primary  transition-all duration-300' type='submit'>
+                            {
+                                createWorkspaceMutation.isPending ? (
+                                    <div className='flex items-center gap-2 italic'>
+                                        <span>Creating...</span>
+                                        <Loader className="w-5 h-5 animate-spin text-amber-600" />
+                                    </div>
+                                ) : (
+                                    <>
+                                        Create Workspace
+                                        <ArrowRight className="size-4" />
+                                    </>
+                                )
+                            }
                         </Button>
                         <Button onClick={(e) => {
                             e.preventDefault()
@@ -114,3 +155,11 @@ export const CreateWorkspace = () => {
         </>
     )
 }
+
+
+/*
+======================================
+Tell React Query the workspace list is now outdated (stale),
+so it refetches fresh data automatically — no manual state update needed.
+======================================
+*/

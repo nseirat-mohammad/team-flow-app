@@ -1,9 +1,13 @@
+import '@/lib/orpc.server' // for pre-rendering
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Manrope } from "next/font/google";
+import { Manrope } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/providers/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/providers/auth-provider";
+import { Providers } from '@/lib/providers/tanstack-query-provider';
+import { ToasterProvider } from '@/lib/providers/toaster-provider';
+
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -35,11 +39,12 @@ export default function RootLayout({
             attribute="class"
             defaultTheme="dark"
             enableSystem
-            disableTransitionOnChange
-          >
+            disableTransitionOnChange>
             <TooltipProvider>
-
-              {children}
+              <Providers>
+                {children}
+                <ToasterProvider />
+              </Providers>
             </TooltipProvider>
           </ThemeProvider>
         </body>

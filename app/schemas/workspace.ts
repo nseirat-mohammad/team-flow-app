@@ -9,4 +9,13 @@ export const workspaceSchema = z.object({
 
 
 //* infer type:
-// export const CREATE_WORKSPACE_TYPE =
+export type createWorkspaceSchemaType = z.infer<typeof workspaceSchema>
+
+
+
+/*
+==========================
+Infer the TS type directly from the schema (single source of truth) —
+so form types & validation rules never drift out of sync when the schema changes.
+==========================
+*/

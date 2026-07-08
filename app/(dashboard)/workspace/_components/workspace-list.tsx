@@ -1,26 +1,111 @@
+"use client"
+import { useEffect, useState } from 'react'
 import TooltipWrapper from '@/components/shared/tooltip-wrapper'
 import { Button } from '@/components/ui/button'
-import { workspaces } from '@/constant/data'
 import { getWorkspaceColor } from '@/lib/helpers'
 import { cn } from '@/lib/utils'
-
+import { LoginLink } from '@kinde-oss/kinde-auth-nextjs/components'
+import { useWorkspaces } from '@/lib/hooks/use-workspace'
 
 export const WorkspaceList = () => {
+    const { workspaces, currentWorkspace } = useWorkspaces()
+    const [showActiveLabelFor, setShowActiveLabelFor] = useState<string | null>(
+        () => currentWorkspace?.orgCode ?? null
+    )
+
+    useEffect(() => {
+        if (!currentWorkspace?.orgCode) return
+        const timer = setTimeout(() => {
+            setShowActiveLabelFor(null)
+        }, 3000)
+
+        return () => clearTimeout(timer)
+    }, [currentWorkspace?.orgCode])
+
     return (
-        <>
-            <div className='flex flex-col gap-2'>
-                {
-                    workspaces.map((ws) => (
-                        <TooltipWrapper side='right' key={ws.id} content={ws.name}>
-                            <Button size={"icon"} className={cn("size-14 transition-all duration-300", getWorkspaceColor(ws.id))}>
-                                <span className='text-sm font-medium'>{ws.avatar}</span>
-                            </Button>
-                        </TooltipWrapper>
-                    ))
-                }
+        <div className='flex flex-col gap-2'>
+            {workspaces.map((ws) => {
+                const isActiveWorkspace = ws.id === currentWorkspace.orgCode
+                const showLabel = showActiveLabelFor === ws.id
+                return (
+                    <TooltipWrapper side='right' key={ws.id} content={`${ws.name}${isActiveWorkspace ? " (current)" : ""}`}
+                    >
+                        <div className="relative">
+                            <LoginLink orgCode={ws.id}>
+                                <Button size={"icon"}
+                                    className={cn("size-14 transition-all duration-300", getWorkspaceColor(ws.id))}
+                                >
+                                    <span className='text-xl font-medium'>{ws.avatar}</span>
+                                </Button>
+                            </LoginLink>
 
+                            {isActiveWorkspace && (
+                                <span className="absolute -top-1 -right-0.5 flex size-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                                    <span className="relative inline-flex rounded-full size-3 bg-green-500 border-2 border-background" />
+                                </span>
+                            )}
 
-            </div>
-        </>
+                            {showLabel && (
+                                <div
+                                    className={cn(
+                                        "absolute left-full ml-2 top-1/2 -translate-y-1/2 whitespace-nowrap",
+                                        "bg-primary border-2 border-primary text-foreground text-xs px-2 py-1 rounded-md shadow-md",
+                                        "animate-in fade-in slide-in-from-left-1 duration-300"
+                                    )}
+                                >
+                                    This workspace is currently active
+                                </div>
+                            )}
+                        </div>
+                    </TooltipWrapper>
+                )
+            })}
+        </div>
     )
 }
+
+/**
+     * ============================================================
+     * useSuspenseQuery — reading server-prefetched data on the client
+     * ============================================================
+     *
+     * WHAT IT DOES:
+     * --------------
+     * `useSuspenseQuery` works like the normal `useQuery`, but it never
+     * returns a "loading" state. Instead, if the data isn't in the cache
+     * yet, it THROWS a promise — which React catches via a `<Suspense>`
+     * boundary higher up the tree (showing a fallback like a spinner/skeleton
+     * while it waits).
+     *
+     * WHY WE USE IT HERE:
+     * ---------------------
+     * This component is rendered inside a `<HydrateClient>` boundary in the
+     * parent layout, where the server already ran:
+     *
+     *     await queryClient.prefetchQuery(orpc.workspace.list.queryOptions())
+     *
+     * That means by the time this component mounts on the client, the data
+     * for this exact query key is ALREADY in the cache (hydrated from the
+     * server). So `useSuspenseQuery` finds it instantly and returns it
+     * synchronously — no loading state, no flicker, no `isLoading` check
+     * needed anywhere in this component.
+     *
+     * WHY NOT REGULAR `useQuery` ?
+     * ------------------------------
+     * With `useQuery`, we'd have to manually handle `isLoading`, `isError`,
+     * etc., even though we already know the data will be there (because we
+     * prefetched it). `useSuspenseQuery` lets us skip all of that and just
+     * destructure `data` directly, since we're confident it exists.
+     *
+     * IMPORTANT:
+     * -----------
+     * The query key generated by `orpc.workspace.list.queryOptions()` here
+     * MUST match exactly the one used in `prefetchQuery` on the server, or
+     * this will trigger a real client-side fetch instead of using the
+     * hydrated cache.
+     *
+     * `data` is never `undefined` here — TypeScript knows this too, which is
+     * why we can safely destructure `{ workspaces, currentWorkspace }`
+     * without any optional chaining.
+     */

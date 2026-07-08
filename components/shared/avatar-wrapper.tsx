@@ -25,7 +25,7 @@ export const AvatarWrapper = ({
     return (
         <Avatar className={cn("size-10 cursor-pointer  active:scale-90 ", className)}>
             <AvatarImage src={src} alt={alt} className={cn("rounded-[inherit]", className)} />
-            <AvatarFallback className={cn("bg-primary/35 cursor-pointer hover:ring-4 hover:ring-offset-0 transition-all duration-300 ease-out hover:ring-primary text-lg text-muted-foreground font-medium", fallbackClassName)}>
+            <AvatarFallback className={cn("bg-primary/35 cursor-pointer hover:ring-4 hover:ring-offset-0 transition-all duration-300 ease-out hover:ring-primary text-base text-muted-foreground font-medium", fallbackClassName)}>
                 {resolvedFallback}
             </AvatarFallback>
         </Avatar>

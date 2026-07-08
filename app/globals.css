@@ -208,6 +208,20 @@
   animation: spin-slow 8s linear infinite;
 }
 
+@keyframes toast-progress {
+  from {
+    width: 100%;
+  }
+
+  to {
+    width: 0%;
+  }
+}
+
+.animate-toast-progress {
+  animation: toast-progress linear forwards;
+}
+
 
 /* @keyframes spin-slow {
   from {

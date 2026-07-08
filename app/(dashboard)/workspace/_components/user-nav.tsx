@@ -1,19 +1,14 @@
+"use client"
+
 import { AvatarWrapper } from '@/components/shared/avatar-wrapper'
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownWrapper } from '@/components/shared/dropdown-wrapper'
 import { Button } from '@/components/ui/button'
-import { getFallbackfromgivenName } from '@/lib/helpers'
+import { useCurrentUser } from '@/lib/hooks/use-current-user'
 import { LogoutLink, PortalLink } from '@kinde-oss/kinde-auth-nextjs/components'
 import { CreditCard, LogOut, User } from 'lucide-react'
 
-const user = {
-    given_name: "Jan Marshal",
-    picture: "https://avatars.githubusercontent.com/u/124599?s=160&v=4",
-    email: "exampel@exampel.com"
-}
-
-
-
 export const UserNav = () => {
+    const { user, avatarSrc, displayName, fallbackName } = useCurrentUser()
     return (
         <>
             <DropdownWrapper
@@ -23,18 +18,18 @@ export const UserNav = () => {
                 trigger={
                     <Button size={"icon"} className='size-14 shadow-md rounded-xl hover:rounded-lg bg-primary/20  border-primary/75 hover:bg-priamry/50 hover:ring-2
                 hover:ring-offset-0 hover:outline-none hover:ring-primary transition-all duration-300 ease-out hover:text-accent-foreground '>
-                        <AvatarWrapper src={user.picture} className='object-cover' fallback={getFallbackfromgivenName(user.given_name)} />
+                        <AvatarWrapper src={avatarSrc} className='object-cover' fallback={fallbackName} />
                     </Button>
                 }
                 iconOnly
-                tooltipContent={user.given_name} tooltipSide={'top'}
+                tooltipContent={displayName} tooltipSide={'top'}
                 labelClassName='flex text-left font-mormal gap-2 items-center px-1 py-1.5'
                 label={
                     <>
                         <div className='size-12 flex items-center justify-center shadow-md rounded-lg  bg-primary/20  hover:bg-priamry/50 ring-2
                 ring-offset-0 outline-none ring-primary transition-all duration-300 ease-out hover:text-accent-foreground '>
 
-                            <AvatarWrapper src={user.picture} className='object-cover size-9 rounded-lg' fallback={getFallbackfromgivenName(user.given_name)} />
+                            <AvatarWrapper src={avatarSrc} className='object-cover size-9 rounded-lg' fallback={fallbackName} />
                         </div>
                         <div className='grid flex-1 text-left text-base leading-tight'>
                             <p className='truncate font-medium text-foreground'>{user.given_name}</p>

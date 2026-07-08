@@ -8,8 +8,30 @@ export const getWorkspaceColor = (id: string): string => {
 }
 
 
-//! Function to get Fallback from the userName:
-export const getFallbackfromgivenName = (name: string): string => {
-    const fallbackName = name.slice(0, 2).toUpperCase()
-    return fallbackName
+//! Function to get the display name: full name if available, otherwise first part of email
+export const getDisplayName = (
+    givenName: string | null,
+    familyName: string | null,
+    email: string | null
+): string => {
+    const fullName = [givenName, familyName].filter(Boolean).join(" ")
+    if (fullName) return fullName
+    return email?.split("@")[0] ?? "User"
+}
+
+//! Function to get Fallback initials from name, or email if name isn't defined
+export const getFallbackName = (
+    givenName: string | null,
+    familyName: string | null,
+    email: string | null
+): string => {
+    const initials = [givenName?.charAt(0), familyName?.charAt(0)]
+        .filter(Boolean)
+        .join("")
+        .toUpperCase()
+
+    if (initials) return initials
+
+    const emailPrefix = email?.split("@")[0]
+    return emailPrefix?.slice(0, 2).toUpperCase() ?? "M"
 }
