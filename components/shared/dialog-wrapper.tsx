@@ -1,8 +1,6 @@
 import { cn } from '@/lib/utils';
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog'
 import TooltipWrapper from './tooltip-wrapper';
-import { X } from 'lucide-react';
-import BorderAnimatedContainer from './border-animated-container';
 
 interface IDialogWrapperProps {
     trigger: React.ReactNode;

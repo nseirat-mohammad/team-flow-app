@@ -16,7 +16,7 @@ export const UserNav = () => {
                 align='end' side='right' sideoffset={20}
                 triggerClassName='bg-priamry'
                 trigger={
-                    <Button size={"icon"} className='size-14 shadow-md rounded-xl hover:rounded-lg bg-primary/20  border-primary/75 hover:bg-priamry/50 hover:ring-2
+                    <Button size={"icon"} className='size-14 shadow-md rounded-xl hover:rounded-lg bg-primary/40  border-primary/80 hover:bg-priamry/50 hover:ring-2
                 hover:ring-offset-0 hover:outline-none hover:ring-primary transition-all duration-300 ease-out hover:text-accent-foreground '>
                         <AvatarWrapper src={avatarSrc} className='object-cover' fallback={fallbackName} />
                     </Button>
