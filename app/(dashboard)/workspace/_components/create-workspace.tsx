@@ -14,7 +14,8 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { createWorkspaceSchemaType, workspaceSchema } from '@/app/schemas/workspace'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { orpc } from '@/lib/orpc'
-import { toastError, toastSuccess } from '@/components/shared/toast'
+import { toastError, toastSuccess, toastWarning } from '@/components/shared/toast'
+import { isDefinedError } from '@orpc/client'
 
 export const CreateWorkspace = () => {
     const [open, onOpenChange] = useState(false)
@@ -31,7 +32,6 @@ export const CreateWorkspace = () => {
     const createWorkspaceMutation = useMutation(
         orpc.workspace.create.mutationOptions({
             onSuccess: (newWorkspace) => {
-                console.log("newWorkspace:", newWorkspace)
                 toastSuccess({
                     title: "Success!",
                     description: `Worksapce ${newWorkspace.workspaceName} created Succesfully!`
@@ -42,10 +42,31 @@ export const CreateWorkspace = () => {
                 form.reset();
                 onOpenChange(false); //* close thee dialog.
             },
-            onError: () => {
+            onError: (error) => {
+                if (isDefinedError(error)) {
+                    if (error.code === "RATE_LIMITED") {
+                        toastWarning({
+                            title: "Warning!",
+                            description: error.message || "You have reached the maximum number of workspaces allowed. Please try again later."
+                        })
+                        return;
+                    }
+                    if (error.code === "FORBIDDEN") {
+                        toastWarning({
+                            title: "Warning!",
+                            description: error.message || "You are not allowed to create a new workspace."
+                        })
+                        return;
+                    }
+                    toastError({
+                        title: "Error!",
+                        description: error.message
+                    })
+                    return;
+                }
                 toastError({
                     title: "Error!",
-                    description: "Failed to create new Workspace, Please try again later!"
+                    description: error.message || "Failed to create new Workspace, Please try again later!"
                 })
                 form.reset()
             }
@@ -55,7 +76,6 @@ export const CreateWorkspace = () => {
     //! 2- define the submit handler:
     const onSubmit = (values: createWorkspaceSchemaType) => {
         createWorkspaceMutation.mutate(values)
-        console.log("OnSubmit")
     }
 
     return (
@@ -65,7 +85,7 @@ export const CreateWorkspace = () => {
                 open={open} tooltipContent='Create Workspace' tooltipSide='left'
                 title="Create Workspace"
                 description='create new workspace to get started.'
-                dialogContentClassName='sm:max-w-[600px] bg-background border border-primary/50'
+                dialogContentClassName='sm:max-w-[600px] bg-background border border-primary/90'
                 icon={<Layers className='size-7 text-muted-foreground' />}
                 iconClassName='border border-primary'
                 onOpenChange={onOpenChange} iconOnly trigger={
@@ -117,7 +137,7 @@ export const CreateWorkspace = () => {
                                     aria-invalid={fieldState.invalid}
                                     placeholder="Write your workspace"
                                     autoComplete="off"
-                                    className="bg-input border border-border focus-visible:ring-2 focus-visible:ring-primary/50 placeholder:text-xs"
+                                    className="bg-input border border-primary/30 focus-visible:border-transparent focus-visible:ring-2 focus-visible:ring-primary placeholder:text-xs"
                                 />
                                 {fieldState.invalid && (
                                     <FieldError errors={[fieldState.error]} />

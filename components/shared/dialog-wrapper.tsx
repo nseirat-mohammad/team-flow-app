@@ -45,7 +45,7 @@ export const DialogWrapper = ({ trigger, triggerClassName, open = false, onOpenC
                 )}
                 {/* Dialog Content */}
                 <DialogContent className={cn(
-                    "bg--zinc-200 dark:bg-zinc-950 border border-border/60",
+                    "bg-zinc-200 dark:bg-zinc-950 border border-border/60",
                     dialogContentClassName
                 )}>
                     {(icon || title || description) && (
