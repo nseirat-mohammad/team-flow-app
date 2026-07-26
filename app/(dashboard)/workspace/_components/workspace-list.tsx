@@ -9,58 +9,37 @@ import { useWorkspaces } from '@/lib/hooks/use-workspace'
 
 export const WorkspaceList = () => {
     const { workspaces, currentWorkspace } = useWorkspaces()
-    const [showActiveLabelFor, setShowActiveLabelFor] = useState<string | null>(
-        () => currentWorkspace?.orgCode ?? null
-    )
-
-    useEffect(() => {
-        if (!currentWorkspace?.orgCode) return
-        const timer = setTimeout(() => {
-            setShowActiveLabelFor(null)
-        }, 3000)
-
-        return () => clearTimeout(timer)
-    }, [currentWorkspace?.orgCode])
-
     return (
-        <div className='flex flex-col gap-2'>
-            {workspaces.map((ws) => {
-                const isActiveWorkspace = ws.id === currentWorkspace.orgCode
-                const showLabel = showActiveLabelFor === ws.id
-                return (
-                    <TooltipWrapper side='right' key={ws.id} content={`${ws.name}${isActiveWorkspace ? " (current)" : ""}`}
-                    >
-                        <div className="relative">
-                            <LoginLink orgCode={ws.id}>
-                                <Button size={"icon"}
-                                    className={cn("size-14 transition-all duration-300", getWorkspaceColor(ws.id))}
-                                >
-                                    <span className='text-xl font-medium'>{ws.avatar}</span>
-                                </Button>
-                            </LoginLink>
+        <div className={cn(
+            "h-full workspace-scroll px-2 overflow-y-auto",
+            "max-h-[80vh]",
+        )}>
+            <div className="h-px w-full mx-auto mb-2 bg-primary/80" />
+            <div className='flex flex-col gap-2'>
+                {workspaces.map((ws) => {
+                    const isActiveWorkspace = ws.id === currentWorkspace.orgCode
+                    return (
+                        <TooltipWrapper side='right' key={ws.id} content={`${ws.name}${isActiveWorkspace ? " (current)" : ""}`}>
+                            <div className="relative">
+                                <LoginLink orgCode={ws.id}>
+                                    <Button size={"icon"}
+                                        className={cn("size-14 transition-all duration-300", getWorkspaceColor(ws.id))}
+                                    >
+                                        <span className='text-xl font-medium'>{ws.avatar}</span>
+                                    </Button>
+                                </LoginLink>
 
-                            {isActiveWorkspace && (
-                                <span className="absolute -top-1 -right-0.5 flex size-3">
-                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-                                    <span className="relative inline-flex rounded-full size-3 bg-green-500 border-2 border-background" />
-                                </span>
-                            )}
-
-                            {showLabel && (
-                                <div
-                                    className={cn(
-                                        "absolute left-full ml-2 top-1/2 -translate-y-1/2 whitespace-nowrap",
-                                        "bg-primary border-2 border-primary text-foreground text-xs px-2 py-1 rounded-md shadow-md",
-                                        "animate-in fade-in slide-in-from-left-1 duration-300"
-                                    )}
-                                >
-                                    This workspace is currently active
-                                </div>
-                            )}
-                        </div>
-                    </TooltipWrapper>
-                )
-            })}
+                                {isActiveWorkspace && (
+                                    <span className="absolute -top-0.5 -right-0.5 flex size-2.5">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                                        <span className="relative inline-flex rounded-full size-2.5 bg-green-500 border-2 border-background" />
+                                    </span>
+                                )}
+                            </div>
+                        </TooltipWrapper>
+                    )
+                })}
+            </div>
         </div>
     )
 }

@@ -5,112 +5,122 @@ import { base } from "../middlewares/base";
 import { requiredAuthMiddleware } from "../middlewares/auth";
 import { requiredWorkspaceMiddleware } from "../middlewares/workspace";
 import { workspaceSchema } from "../schemas/workspace";
-import { init, Organizations } from "@kinde/management-api-js"
+import { init, Organizations } from "@kinde/management-api-js";
+import { requiredStandardMiddleware } from "../middlewares/arcjet/standard";
+import { requiredHeavyWriteSecurityMiddleware } from "../middlewares/arcjet/heavy-write";
 
 export const listWorkspaces = base
-    .use(requiredAuthMiddleware)
-    .use(requiredWorkspaceMiddleware)
-    .route({
-        method: "GET",
-        path: "/workspace",
-        summary: "list all workspaces",
-        tags: ["workspaces"]
-    })
-    .input(z.void())
-    .output(z.object({
-        workspaces: z.array(
-            z.object({
-                id: z.string(),
-                name: z.string(),
-                avatar: z.string()
-            })
-        ),
-        user: z.custom<KindeUser<Record<string, unknown>>>(),
-        currentWorkspace: z.custom<KindeOrganization<unknown>>()
-    }))
-    .handler(async ({ context, errors }) => {
-        const { getUserOrganizations } = getKindeServerSession()
+  .use(requiredAuthMiddleware)
+  .use(requiredWorkspaceMiddleware)
+  .route({
+    method: "GET",
+    path: "/workspace",
+    summary: "list all workspaces",
+    tags: ["workspaces"],
+  })
+  .input(z.void())
+  .output(
+    z.object({
+      workspaces: z.array(
+        z.object({
+          id: z.string(),
+          name: z.string(),
+          avatar: z.string(),
+        }),
+      ),
+      user: z.custom<KindeUser<Record<string, unknown>>>(),
+      currentWorkspace: z.custom<KindeOrganization<unknown>>(),
+    }),
+  )
+  .handler(async ({ context, errors }) => {
+    const { getUserOrganizations } = getKindeServerSession();
 
-        const organizations = await getUserOrganizations()
+    const organizations = await getUserOrganizations();
 
-        if (!organizations) {
-            throw errors.FORBIDDEN()
-        }
-        const workspaces = organizations.orgs
-            .map((org) => ({
-                id: org.code,
-                name: org.name ?? "My WorkSpace",
-                avatar: org.name?.charAt(0).toUpperCase() ?? "W"
-            }))
-            .sort((a, b) => a.id.localeCompare(b.id))
-        return {
-            workspaces,
-            user: context.user,
-            currentWorkspace: context.workspace
-        }
-    })
-
+    if (!organizations) {
+      throw errors.FORBIDDEN();
+    }
+    const workspaces = organizations.orgs
+      .map((org) => ({
+        id: org.code,
+        name: org.name ?? "My WorkSpace",
+        avatar: org.name?.charAt(0).toUpperCase() ?? "W",
+      }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    return {
+      workspaces,
+      user: context.user,
+      currentWorkspace: context.workspace,
+    };
+  });
 
 //! Function to create workspace:
 export const createWorkspace = base
-    .use(requiredAuthMiddleware)
-    .use(requiredWorkspaceMiddleware)
-    .route({
-        method: "POST",
-        path: "/workspace",
-        summary: "create a new workespace",
-        tags: ["workspace"]
-    })
-    .input(workspaceSchema)
-    .output(z.object({
-        orgCode: z.string(),
-        workspaceName: z.string()
-    }))
-    .handler(async ({ input, context, errors }) => {
-        //! Init() from kinde management Api :
-        init()
+  .use(requiredAuthMiddleware)
+  .use(requiredWorkspaceMiddleware)
+  .use(requiredStandardMiddleware)
+  .use(requiredHeavyWriteSecurityMiddleware)
+  .route({
+    method: "POST",
+    path: "/workspace",
+    summary: "create a new workespace",
+    tags: ["workspace"],
+  })
+  .input(workspaceSchema)
+  .output(
+    z.object({
+      orgCode: z.string(),
+      workspaceName: z.string(),
+    }),
+  )
+  .handler(async ({ input, context, errors }) => {
+    //! Init() from kinde management Api :
+    init();
+    let data: Awaited<ReturnType<typeof Organizations.createOrganization>>; //* define the data
 
-        let data: Awaited<ReturnType<typeof Organizations.createOrganization>>; //* define the data
+    //? first try and catch to create new workspace:
+    try {
+      data = await Organizations.createOrganization({
+        requestBody: {
+          name: input.name,
+        },
+      });
+    } catch (err) {
+      console.error("Kinde createOrganization failed:", err);
+      throw errors.FORBIDDEN();
+    }
 
-        //? first try and catch to create new workspace:
-        try {
-            data = await Organizations.createOrganization({
-                requestBody: {
-                    name: input.name
-                }
-            });
-        } catch {
-            throw errors.FORBIDDEN()
-        }
+    if (!data.organization?.code) {
+      throw errors.FORBIDDEN({
+        message: "Org code is not defined!",
+      });
+    }
 
-        if (!data.organization?.code) {
-            throw errors.FORBIDDEN({
-                message: "Org code is not defined!"
-            })
-        }
+    //* the sewcond try and catch to add user to the organization:
+    try {
+      await Organizations.addOrganizationUsers({
+        orgCode: data.organization.code,
+        requestBody: {
+          users: [
+            {
+              id: context.user.id,
+              roles: ["admin"],
+            },
+          ],
+        },
+      });
+    } catch {
+      throw errors.FORBIDDEN();
+    }
 
-        //* the sewcond try and catch to add user to the organization:
-        try {
-            await Organizations.addOrganizationUsers({
-                orgCode: data.organization.code,
-                requestBody: {
-                    users: [{
-                        id: context.user.id,
-                        roles: ["admin"]
-                    }]
-                }
-            })
-        } catch {
-            throw errors.FORBIDDEN()
-        }
-        //! refresh the tokens:
-        const { refreshTokens } = getKindeServerSession()
-        await refreshTokens()
-        return {
-            orgCode: data.organization.code,
-            workspaceName: input.name
-        }
-    })
+    //! refresh the tokens:
+    const { refreshTokens } = getKindeServerSession();
+    await refreshTokens();
+    return {
+      orgCode: data.organization.code,
+      workspaceName: input.name,
+    };
+  });
 
 /*
 ==================================================
