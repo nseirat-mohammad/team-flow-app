@@ -1,11 +1,10 @@
 "use client"
-import { useEffect, useState } from 'react'
 import TooltipWrapper from '@/components/shared/tooltip-wrapper'
 import { Button } from '@/components/ui/button'
 import { getWorkspaceColor } from '@/lib/helpers'
 import { cn } from '@/lib/utils'
 import { LoginLink } from '@kinde-oss/kinde-auth-nextjs/components'
-import { useWorkspaces } from '@/lib/hooks/use-workspace'
+import { useWorkspaces } from '@/lib/hooks/workspaces/use-workspace'
 
 export const WorkspaceList = () => {
     const { workspaces, currentWorkspace } = useWorkspaces()

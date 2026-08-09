@@ -116,7 +116,7 @@ export const CreateWorkspace = () => {
                                 </linearGradient>
                             </defs>
                         </svg>
-                        <span className="absolute inset-[2px] flex items-center justify-center rounded-[9px] bg-background shadow-raised">
+                        <span className="absolute inset-[2px] flex items-center justify-center rounded-[9px] bg-zinc-100 dark:bg-zinc-800 shadow-raised">
                             <Plus className="size-5" />
                         </span>
                     </button>
@@ -146,7 +146,7 @@ export const CreateWorkspace = () => {
                         )}
                     />
                     <div className='flex items-center space-x-4 mt-5'>
-                        <Button disabled={createWorkspaceMutation.isPending} size={"lg"} className='active:scale-90 bg-primary/30 hover:bg-primary/50 ring-2 ring-offset-0 ring-primary  transition-all duration-300' type='submit'>
+                        <Button disabled={createWorkspaceMutation.isPending} size={"lg"} className='active:scale-90 bg-primary/40 hover:bg-primary/50 ring-2 ring-offset-0 ring-primary  transition-all duration-300' type='submit'>
                             {
                                 createWorkspaceMutation.isPending ? (
                                     <div className='flex items-center gap-2 italic'>
