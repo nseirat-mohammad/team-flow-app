@@ -3,7 +3,7 @@
 import { AvatarWrapper } from '@/components/shared/avatar-wrapper'
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuSeparator, DropdownWrapper } from '@/components/shared/dropdown-wrapper'
 import { Button } from '@/components/ui/button'
-import { useCurrentUser } from '@/lib/hooks/use-current-user'
+import { useCurrentUser } from '@/lib/hooks/workspaces/use-current-user'
 import { LogoutLink, PortalLink } from '@kinde-oss/kinde-auth-nextjs/components'
 import { CreditCard, LogOut, User } from 'lucide-react'
 
