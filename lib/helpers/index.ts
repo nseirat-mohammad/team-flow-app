@@ -1,4 +1,7 @@
 import { colorCombinations } from "@/constant/data";
+import { generateHTML, type JSONContent } from "@tiptap/react";
+import { baseExtensions } from "../editor-extensions";
+import { Console } from "console";
 
 //! Function to get color workspaces:
 export const getWorkspaceColor = (id: string): string => {
@@ -51,4 +54,18 @@ export const transformChannelName = (name: string) => {
 //! function to get the Avatat if thereis no picture :
 export const getAvatar = (userPicture: string | null | undefined, userEmail: string) => {
   return userPicture ?? `https://avatar.vercel.sh/${userEmail}`
+}
+
+
+//! Function to Convert Json to Html:
+export const convertJsonToHtml = (jsonContent: JSONContent): string => {
+  try{
+    const content = typeof jsonContent === "string" ? JSON.parse(jsonContent) : jsonContent
+    //! generate the html :
+    return generateHTML(content, baseExtensions)
+  }catch(error){
+    console.error("Error converting JSON to HTML:", error);
+    return "";
+  }
+
 }

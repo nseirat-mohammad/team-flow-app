@@ -1,125 +1,116 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: rgb(252, 252, 252);
-  --foreground: rgb(23, 23, 23);
-  --card: rgb(252, 252, 252);
-  --card-foreground: rgb(23, 23, 23);
-  --popover: rgb(252, 252, 252);
-  --popover-foreground: rgb(82, 82, 82);
-  --primary: rgb(168, 227, 114);
-  --primary-foreground: rgb(34, 39, 30);
-  --secondary: rgb(253, 253, 253);
-  --secondary-foreground: rgb(23, 23, 23);
-  --muted: rgb(237, 237, 237);
-  --muted-foreground: rgb(32, 32, 32);
-  --accent: rgb(237, 237, 237);
-  --accent-foreground: rgb(32, 32, 32);
-  --destructive: rgb(202, 20, 172);
-  --destructive-foreground: rgb(255, 252, 255);
-  --border: rgb(223, 223, 223);
-  --input: rgb(246, 246, 246);
-  --ring: rgb(168, 227, 114);
-  --chart-1: rgb(168, 227, 114);
-  --chart-2: rgb(59, 246, 175);
-  --chart-3: rgb(92, 199, 246);
-  --chart-4: rgb(245, 11, 98);
-  --chart-5: rgb(72, 185, 16);
-  --sidebar: rgb(252, 252, 252);
-  --sidebar-foreground: rgb(112, 112, 112);
-  --sidebar-primary: rgb(168, 227, 114);
-  --sidebar-primary-foreground: rgb(34, 39, 30);
-  --sidebar-accent: rgb(237, 237, 237);
-  --sidebar-accent-foreground: rgb(32, 32, 32);
-  --sidebar-border: rgb(223, 223, 223);
-  --sidebar-ring: rgb(168, 227, 114);
+  --background: rgb(255, 255, 255);
+  --foreground: rgb(38, 38, 38);
+  --card: rgb(255, 255, 255);
+  --card-foreground: rgb(38, 38, 38);
+  --popover: rgb(255, 255, 255);
+  --popover-foreground: rgb(38, 38, 38);
+  --primary: rgb(245, 158, 11);
+  --primary-foreground: rgb(0, 0, 0);
+  --secondary: rgb(243, 244, 246);
+  --secondary-foreground: rgb(75, 85, 99);
+  --muted: rgb(249, 250, 251);
+  --muted-foreground: rgb(107, 114, 128);
+  --accent: rgb(255, 251, 235);
+  --accent-foreground: rgb(146, 64, 14);
+  --destructive: rgb(239, 68, 68);
+  --destructive-foreground: rgb(255, 255, 255);
+  --border: rgb(229, 231, 235);
+  --input: rgb(229, 231, 235);
+  --ring: rgb(245, 158, 11);
+  --chart-1: rgb(245, 158, 11);
+  --chart-2: rgb(217, 119, 6);
+  --chart-3: rgb(180, 83, 9);
+  --chart-4: rgb(146, 64, 14);
+  --chart-5: rgb(120, 53, 15);
+  --sidebar: rgb(249, 250, 251);
+  --sidebar-foreground: rgb(38, 38, 38);
+  --sidebar-primary: rgb(245, 158, 11);
+  --sidebar-primary-foreground: rgb(255, 255, 255);
+  --sidebar-accent: rgb(255, 251, 235);
+  --sidebar-accent-foreground: rgb(146, 64, 14);
+  --sidebar-border: rgb(229, 231, 235);
+  --sidebar-ring: rgb(245, 158, 11);
   --font-sans: Manrope, ui-sans-serif, sans-serif, system-ui;
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: JetBrains Mono, ui-monospace, monospace;
-  --radius: 0.5rem;
+  --font-serif: Source Serif 4, serif;
+  --font-mono: JetBrains Mono, monospace;
+  --radius: 0.375rem;
   --shadow-x: 0px;
-  --shadow-y: 1px;
-  --shadow-blur: 3px;
-  --shadow-spread: 0px;
-  --shadow-opacity: 0.17;
-  --shadow-color: #000000;
-  --shadow-2xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.09);
-  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.09);
-  --shadow-sm:
-    0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 1px 2px -1px hsl(0 0% 0% / 0.17);
-  --shadow:
-    0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 1px 2px -1px hsl(0 0% 0% / 0.17);
-  --shadow-md:
-    0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 2px 4px -1px hsl(0 0% 0% / 0.17);
-  --shadow-lg:
-    0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 4px 6px -1px hsl(0 0% 0% / 0.17);
-  --shadow-xl:
-    0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 8px 10px -1px hsl(0 0% 0% / 0.17);
-  --shadow-2xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.43);
-  --tracking-normal: 0.025em;
+  --shadow-y: 4px;
+  --shadow-blur: 8px;
+  --shadow-spread: -1px;
+  --shadow-opacity: 0.1;
+  --shadow-color: hsl(0 0% 0%);
+  --shadow-2xs: 0px 4px 8px -1px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0px 4px 8px -1px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 1px 2px -2px hsl(0 0% 0% / 0.10);
+  --shadow: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 1px 2px -2px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 2px 4px -2px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 4px 6px -2px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 8px 10px -2px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.25);
+  --tracking-normal: 0em;
   --spacing: 0.25rem;
 }
 
 .dark {
-  --background: rgb(18, 18, 18);
-  --foreground: rgb(226, 240, 234);
-  --card: rgb(23, 23, 23);
-  --card-foreground: rgb(226, 240, 234);
-  --popover: rgb(36, 36, 36);
-  --popover-foreground: rgb(169, 169, 169);
-  --primary: rgb(41, 98, 0);
-  --primary-foreground: rgb(226, 232, 221);
-  --secondary: rgb(36, 36, 36);
-  --secondary-foreground: rgb(250, 250, 250);
+  --background: rgb(23, 23, 23);
+  --foreground: rgb(229, 229, 229);
+  --card: rgb(38, 38, 38);
+  --card-foreground: rgb(229, 229, 229);
+  --popover: rgb(38, 38, 38);
+  --popover-foreground: rgb(229, 229, 229);
+  --primary: rgb(245, 158, 11);
+  --primary-foreground: rgb(0, 0, 0);
+  --secondary: rgb(38, 38, 38);
+  --secondary-foreground: rgb(229, 229, 229);
   --muted: rgb(31, 31, 31);
-  --muted-foreground: rgb(162, 162, 162);
-  --accent: rgb(49, 49, 49);
-  --accent-foreground: rgb(250, 250, 250);
-  --destructive: rgb(251, 36, 96);
-  --destructive-foreground: rgb(237, 232, 236);
-  --border: rgb(41, 41, 41);
-  --input: rgb(36, 36, 36);
-  --ring: rgb(168, 222, 74);
-  --chart-1: rgb(168, 222, 74);
-  --chart-2: rgb(96, 250, 181);
-  --chart-3: rgb(139, 222, 250);
-  --chart-4: rgb(251, 36, 96);
-  --chart-5: rgb(66, 212, 45);
-  --sidebar: rgb(18, 18, 18);
-  --sidebar-foreground: rgb(137, 137, 137);
-  --sidebar-primary: rgb(41, 98, 0);
-  --sidebar-primary-foreground: rgb(226, 232, 221);
-  --sidebar-accent: rgb(49, 49, 49);
-  --sidebar-accent-foreground: rgb(250, 250, 250);
-  --sidebar-border: rgb(41, 41, 41);
-  --sidebar-ring: rgb(168, 222, 74);
+  --muted-foreground: rgb(163, 163, 163);
+  --accent: rgb(146, 64, 14);
+  --accent-foreground: rgb(253, 230, 138);
+  --destructive: rgb(239, 68, 68);
+  --destructive-foreground: rgb(255, 255, 255);
+  --border: rgb(64, 64, 64);
+  --input: rgb(64, 64, 64);
+  --ring: rgb(245, 158, 11);
+  --chart-1: rgb(251, 191, 36);
+  --chart-2: rgb(217, 119, 6);
+  --chart-3: rgb(146, 64, 14);
+  --chart-4: rgb(180, 83, 9);
+  --chart-5: rgb(146, 64, 14);
+  --sidebar: rgb(15, 15, 15);
+  --sidebar-foreground: rgb(229, 229, 229);
+  --sidebar-primary: rgb(245, 158, 11);
+  --sidebar-primary-foreground: rgb(255, 255, 255);
+  --sidebar-accent: rgb(146, 64, 14);
+  --sidebar-accent-foreground: rgb(253, 230, 138);
+  --sidebar-border: rgb(64, 64, 64);
+  --sidebar-ring: rgb(245, 158, 11);
   --font-sans: Manrope, ui-sans-serif, sans-serif, system-ui;
-  --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-  --font-mono: JetBrains Mono, ui-monospace, monospace;
-  --radius: 0.5rem;
+  --font-serif: Source Serif 4, serif;
+  --font-mono: JetBrains Mono, monospace;
+  --radius: 0.375rem;
   --shadow-x: 0px;
-  --shadow-y: 1px;
-  --shadow-blur: 3px;
-  --shadow-spread: 0px;
-  --shadow-opacity: 0.17;
-  --shadow-color: #000000;
-  --shadow-2xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.09);
-  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.09);
-  --shadow-sm:
-    0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 1px 2px -1px hsl(0 0% 0% / 0.17);
-  --shadow:
-    0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 1px 2px -1px hsl(0 0% 0% / 0.17);
-  --shadow-md:
-    0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 2px 4px -1px hsl(0 0% 0% / 0.17);
-  --shadow-lg:
-    0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 4px 6px -1px hsl(0 0% 0% / 0.17);
-  --shadow-xl:
-    0px 1px 3px 0px hsl(0 0% 0% / 0.17), 0px 8px 10px -1px hsl(0 0% 0% / 0.17);
-  --shadow-2xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.43);
+  --shadow-y: 4px;
+  --shadow-blur: 8px;
+  --shadow-spread: -1px;
+  --shadow-opacity: 0.1;
+  --shadow-color: hsl(0 0% 0%);
+  --shadow-2xs: 0px 4px 8px -1px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0px 4px 8px -1px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 1px 2px -2px hsl(0 0% 0% / 0.10);
+  --shadow: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 1px 2px -2px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 2px 4px -2px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 4px 6px -2px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.10), 0px 8px 10px -2px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0px 4px 8px -1px hsl(0 0% 0% / 0.25);
 }
 
 @theme inline {
@@ -173,13 +164,6 @@
   --shadow-lg: var(--shadow-lg);
   --shadow-xl: var(--shadow-xl);
   --shadow-2xl: var(--shadow-2xl);
-
-  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
-  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
-  --tracking-normal: var(--tracking-normal);
-  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
-  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
-  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
 }
 
 @layer base {
@@ -188,7 +172,6 @@
   }
   body {
     @apply bg-background text-foreground;
-    letter-spacing: var(--tracking-normal);
   }
 }
 
@@ -236,49 +219,31 @@
   --animate-border: border 4s linear infinite;
 }
 
-/* @keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin-slow {
-  animation: spin-slow 3s linear infinite;
-} */
-
-/* Custom scrollbar للـ WorkspaceList */
 .workspace-scroll::-webkit-scrollbar {
-  width: 0.5px;
+    width: 2px;
 }
 
 .workspace-scroll::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 999px;
+    background: transparent;
+}
+
+.workspace-scroll::-webkit-scrollbar-track {
+    background: var(--color-background);
+        border-radius: 999px;
 }
 
 .workspace-scroll::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    var(--primary) 20%,
-    var(--primary) 80%,
-    transparent
-  );
-  border-radius: 999px;
+        background: linear-gradient(to bottom, transparent, var(--color-primary) 20%, var(--color-primary) 80%, transparent);
+        background-clip: padding-box;
+        border-radius: 999px
 }
 
-/* Rainbow "Create New Channel" button
-   Colors match Tailwind's default palette:
-   red-500 / orange-500 / amber-400 / green-500 / teal-400 / blue-500 / purple-500 / pink-500 */
-
+/* Rainbow "Create New Channel" button*/
 @keyframes rainbow-spin {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -288,31 +253,35 @@
   position: relative;
   isolation: isolate;
   border-radius: 9999px;
-  padding: 2px; /* border thickness */
-  overflow: hidden; /* clip the oversized rotating gradient to the pill shape */
+  padding: 2px;
+  overflow: hidden;
 }
 
 .rainbow-btn::after {
   content: "";
   position: absolute;
-  /* oversized on purpose: as it rotates, a wide/short rectangle briefly
-     becomes tall/narrow in the same spot. Sizing it well past the button
-     (instead of just a couple px bigger) means it still fully covers the
-     pill at every angle, and overflow:hidden above clips the rest. */
   inset: -150%;
   z-index: -1;
-  background: conic-gradient(
-    from 0deg,
-    #ef4444,
-    /* red-500 */ #f97316,
-    /* orange-500 */ #fbbf24,
-    /* amber-400 */ #22c55e,
-    /* green-500 */ #2dd4bf,
-    /* teal-400 */ #3b82f6,
-    /* blue-500 */ #a855f7,
-    /* purple-500 */ #ec4899,
-    /* pink-500 */ #ef4444 /* red-500, closes the loop */
-  );
+  background: conic-gradient(from 0deg,
+      #ef4444,
+      /* red-500 */
+      #f97316,
+      /* orange-500 */
+      #fbbf24,
+      /* amber-400 */
+      #22c55e,
+      /* green-500 */
+      #2dd4bf,
+      /* teal-400 */
+      #3b82f6,
+      /* blue-500 */
+      #a855f7,
+      /* purple-500 */
+      #ec4899,
+      /* pink-500 */
+      #ef4444
+      /* red-500, closes the loop */
+    );
   animation: rainbow-spin 3.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 }
 
@@ -320,4 +289,124 @@
   .rainbow-btn::after {
     animation: none;
   }
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  color: Hsl(var(--color-muted));
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Basic editor styles */
+.tiptap {
+  :first-child {
+    margin-top: 0;
+  }
+
+  pre {
+    border-radius: 0.5rem;
+    font-family: 'JetBrainsMono', monospace;
+    margin: 1.5rem 0;
+    padding: 0.75rem 1rem;
+
+    code {
+      background: none;
+      color: inherit;
+      font-size: 0.8rem;
+      padding: 0;
+    }
+
+    /* Code styling */
+    .hljs-comment,
+    .hljs-quote {
+      color: #616161 !important;
+    }
+
+    .hljs-variable,
+    .hljs-template-variable,
+    .hljs-attribute,
+    .hljs-tag,
+    .hljs-regexp,
+    .hljs-link,
+    .hljs-name,
+    .hljs-selector-id,
+    .hljs-selector-class {
+      color: #f98181 !important;
+    }
+
+    .hljs-number,
+    .hljs-meta,
+    .hljs-built_in,
+    .hljs-builtin-name,
+    .hljs-literal,
+    .hljs-type,
+    .hljs-params {
+      color: #fbbc88 !important;
+    }
+
+    .hljs-string,
+    .hljs-symbol,
+    .hljs-bullet {
+      color: #b9f18d !important;
+    }
+
+    .hljs-title,
+    .hljs-section {
+      color: #faf594 !important;
+    }
+
+    .hljs-keyword,
+    .hljs-selector-tag {
+      color: #70cff8 !important;
+    }
+
+    .hljs-emphasis {
+      font-style: italic !important;
+    }
+
+    .hljs-strong {
+      font-weight: 700 !important;
+    }
+  }
+}
+
+@keyframes shimmer-in {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(150%);
+  }
+}
+
+@keyframes shimmer-out {
+  0% {
+    transform: translateX(150%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+.shimmer-enter {
+  animation: shimmer-in 0.35s ease-out forwards;
+}
+
+.shimmer-leave {
+  animation: shimmer-out 0.35s ease-out forwards;
+}
+
+@keyframes flash {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-flash {
+  animation: flash 300ms ease-out forwards;
 }

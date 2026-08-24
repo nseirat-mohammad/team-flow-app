@@ -14,13 +14,30 @@ datasource db {
 
 model Channel {
   id        String   @id @default(uuid())
-  name      String   @unique
+  name      String   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   // For foreign key relationships
   workspaceId String // Kinde Organization ID
   createdById String // Kinde User ID
+  message     Message[]
 
   @@unique([workspaceId, name]) // Unique constraint on workspaceId and name (channel name must be unique within a workspace)
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  content   String
+  imageUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  //! Store the user Information:
+  authorId     String  // [Kinde UserID]
+  authorEmail  String // [User Email]
+  authorName   String // [Display Name]
+  authorAvatar String // [User Avatar]
+  Channel      Channel? @relation(fields: [channelId], references: [id])
+  channelId    String?
 }

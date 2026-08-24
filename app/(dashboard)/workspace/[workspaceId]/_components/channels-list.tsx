@@ -5,26 +5,23 @@ import { useChannelsList } from '@/lib/hooks/channels/use-channels-list'
 import { cn } from '@/lib/utils'
 import { Check, Hash } from 'lucide-react'
 import Link from 'next/link'
-import React from 'react'
+import { useParams } from 'next/navigation'
 
 const ChannelsList = () => {
+    const { workspaceId,channelId} = useParams<{ workspaceId: string,channelId: string }>()
     const { channels: ChannelListData } = useChannelsList();
 
-    const [activeId, setActiveId] = React.useState<string | null>(
-        ChannelListData[0]?.id ?? null
-    )
     return (
         <>
             <CollapsibleWrapper defaultOpen title={"Channels"} triggerClassName='uppercase bg-primary/5 border-b border-primary/50  font-semibold uppercase tracking-wide'>
                 <div className={cn("space-y-1 px-2 py-1")}>
                     {ChannelListData.map((channel) => {
-                        const isActive = activeId === channel.id
+                        const isActive =channel.id === channelId  
 
                         return (
                             <Link
-                                href="#"
+                                href={`/workspace/${workspaceId}/channel/${channel.id}`}
                                 key={channel.id}
-                                onClick={() => setActiveId(channel.id)}
                                 className={cn(
                                     "flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors duration-150",
                                     "text-muted-foreground hover:bg-sky-500/10 hover:text-foreground",
