@@ -37,7 +37,9 @@ const ChannelListLayout = async ({ children }: { children: React.ReactNode }) =>
             <MembersList />
           </HydrateClient>
         </div>
+
       </div>
+      {children}
     </>
   )
 }

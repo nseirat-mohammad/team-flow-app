@@ -14,8 +14,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { orpc } from '@/lib/orpc'
 import { toastError, toastSuccess, toastWarning } from '@/components/shared/toast'
 import { isDefinedError } from '@orpc/client'
+import { useParams, useRouter } from 'next/navigation'
+
 
 const CreateNewChannel = () => {
+    const { workspaceId } = useParams<{ workspaceId: string }>()
+    const router = useRouter()
     const [open, onOpenChange] = useState(false)
     const queryClient = useQueryClient()
     //! 1-define the form (in React Hook Form):
@@ -46,6 +50,8 @@ const CreateNewChannel = () => {
 
                 form.reset()
                 onOpenChange(false)
+                // التوجيه المباشر للقناة الجديدة
+                router.push(`/workspace/${workspaceId}/channel/${data.id}`)
             },
             onError: (error) => {
                 if (isDefinedError(error)) {
