@@ -8,7 +8,6 @@ import MessageComposer from './message-composer';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { orpc } from '@/lib/orpc';
 import { toastSuccess } from '@/components/shared/toast';
-import { useChannelId } from '@/lib/hooks/channels/use-channel-id';
 
 
 interface ImessageInputProps {
@@ -16,7 +15,7 @@ interface ImessageInputProps {
 }
 
 const MessageInput = ({channelId }:ImessageInputProps) => {
-const queryClient = useQueryClient()
+    const queryClient = useQueryClient()
 
     const form = useForm({
         resolver: zodResolver(createMessageSchema),
@@ -32,7 +31,7 @@ const queryClient = useQueryClient()
         orpc.message.create.mutationOptions({
             onSuccess:() =>{
                 queryClient.invalidateQueries({
-                    queryKey: orpc.message.list.queryKey({ input: { channelId } })
+                    queryKey: orpc.message.list.key({ input:{ channelId }})
                 })
                 toastSuccess({ title: "success!", description: "Message created successfully!" })
             },

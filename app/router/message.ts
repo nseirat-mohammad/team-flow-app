@@ -69,8 +69,15 @@ export const listMessages = base
     summary: "Get all messages",
     tags: ["messages"]
 })
-.input(z.object({channelId: z.string(),}))
-.output(z.array(z.custom<Message>()))
+.input(z.object({
+    channelId: z.string(),
+    limit: z.number().min(1).max(100).optional(),
+    cursor: z.string().optional()
+}))
+.output(z.object({
+    items:z.array(z.custom<Message>()),
+    nextCursor: z.string().optional()
+}))
 .handler(async({input,context,errors}) =>{
     //* check if the channel belong to spacific workspace then get alll messages that belong to the channel.
     const channel = await prisma.channel.findFirst({
@@ -82,14 +89,31 @@ export const listMessages = base
     if(!channel) {
         throw errors.NOT_FOUND({ message: "Channel not found..." });
     }
-    const data = await prisma.message.findMany({
+    /* define the limit and cursor for pagination */
+    const limit = input.limit ?? 30
+    const messages = await prisma.message.findMany({
         where:{
-            channelId: input.channelId
+            channelId :input.channelId
         },
-        orderBy:{
-            createdAt: "desc"
-        }
-    });
+        ...(input.cursor ? 
+            {cursor: {id:input.cursor}, skip: 1}
+            :{}
+        ),
+        take: limit,
+        orderBy:[
+            {createdAt: "desc"},
+            {id:"desc"}
+        ],
+    })
 
-    return data
+    //! Find the next cursor by using the id of the last message:
+    const nextCursor = messages.length === limit ? messages[messages.length -1].id : undefined
+
+    return {
+        items: messages,
+        nextCursor
+    }
+
+
+
 })
