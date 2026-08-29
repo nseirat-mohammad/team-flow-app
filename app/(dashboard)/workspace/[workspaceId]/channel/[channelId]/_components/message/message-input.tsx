@@ -8,6 +8,7 @@ import MessageComposer from './message-composer';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { orpc } from '@/lib/orpc';
 import { toastSuccess } from '@/components/shared/toast';
+import { useState } from 'react';
 
 
 interface ImessageInputProps {
@@ -16,6 +17,7 @@ interface ImessageInputProps {
 
 const MessageInput = ({channelId }:ImessageInputProps) => {
     const queryClient = useQueryClient()
+    const [editorKey, setEditorKey] = useState(0)
 
     const form = useForm({
         resolver: zodResolver(createMessageSchema),
@@ -33,6 +35,8 @@ const MessageInput = ({channelId }:ImessageInputProps) => {
                 queryClient.invalidateQueries({
                     queryKey: orpc.message.list.key({ input:{ channelId }})
                 })
+                form.reset({channelId,content:""})
+                setEditorKey((prev) => prev + 1)
                 toastSuccess({ title: "success!", description: "Message created successfully!" })
             },
             onError:() =>{
@@ -55,7 +59,7 @@ const MessageInput = ({channelId }:ImessageInputProps) => {
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                            <MessageComposer value={field.value} onChange={field.onChange} onSubmit={() =>onSubmit(form.getValues())} isPending={createMessageMutation.isPending} />
+                            <MessageComposer key={editorKey} value={field.value} onChange={field.onChange} onSubmit={() =>onSubmit(form.getValues())} isPending={createMessageMutation.isPending} />
                             {fieldState.invalid && ( <FieldError errors={[fieldState.error]} /> )}
                         </Field>
                     )}
