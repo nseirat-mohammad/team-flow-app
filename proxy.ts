@@ -1,6 +1,6 @@
 import arcjet, { createMiddleware, detectBot } from "@arcjet/next";
-import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { NextRequest, NextResponse } from "next/server";
+import { withAuth } from "@kinde-oss/kinde-auth-nextjs/server";
+import { NextRequest, NextResponse,NextProxy } from "next/server";
 
 
 
@@ -19,20 +19,33 @@ const aj = arcjet({
     ]
 })
 
+const existingMiddleware = async (req:NextRequest) =>{
+    const anyRequest = req as {
+        nextUrl: NextRequest["nextUrl"],
+        kindeAuth?: {
+            user?:any ,
+            token?:any
+        },
+    }
 
+    //! 1-get the url
+    const url = anyRequest.nextUrl
+    //! 2- get the org code from the claim
+    const orgCode = anyRequest?.kindeAuth?.user?.org_code ||
+        anyRequest?.kindeAuth?.token?.org_code ||
+        anyRequest?.kindeAuth?.token?.claims?.org_code
 
-const existingMiddleware = async (req: NextRequest) =>{
-    const {getClaim} = getKindeServerSession()
-    const orgCode = await getClaim("org_code")
-    
-    const url = req.nextUrl;
-    if(url.pathname.startsWith("/workspace") && !url.pathname.includes( orgCode?.value || "")){
-        url.pathname = `/workspace/${orgCode?.value}`
+    if(url.pathname.startsWith("/workspace") && !url.pathname.includes( orgCode || "")){
+        url.pathname = `/workspace/${orgCode}`
         return NextResponse.redirect(url)
     }
     return NextResponse.next()
+
+
 }
-export default createMiddleware(aj, existingMiddleware)
+export default createMiddleware(aj, withAuth(existingMiddleware,{
+    publicPaths: ["/"]
+}) as NextProxy)
 
 //* create Matcher:
 export const config = {
