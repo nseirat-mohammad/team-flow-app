@@ -9,6 +9,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { orpc } from '@/lib/orpc';
 import { toastSuccess } from '@/components/shared/toast';
 import { useState } from 'react';
+import { useAttachmentImage } from '@/lib/hooks/attchImage/use-attach-Image';
 
 
 interface ImessageInputProps {
@@ -18,6 +19,7 @@ interface ImessageInputProps {
 const MessageInput = ({channelId }:ImessageInputProps) => {
     const queryClient = useQueryClient()
     const [editorKey, setEditorKey] = useState(0)
+    const upload = useAttachmentImage()
 
     const form = useForm({
         resolver: zodResolver(createMessageSchema),
@@ -36,6 +38,7 @@ const MessageInput = ({channelId }:ImessageInputProps) => {
                     queryKey: orpc.message.list.key({ input:{ channelId }})
                 })
                 form.reset({channelId,content:""})
+                upload.clearUrl()
                 setEditorKey((prev) => prev + 1)
                 toastSuccess({ title: "success!", description: "Message created successfully!" })
             },
@@ -47,8 +50,10 @@ const MessageInput = ({channelId }:ImessageInputProps) => {
 
     //! Handle form submission (create new Message)
     const onSubmit = (data:CreateMessageType) =>{
-        createMessageMutation.mutate(data)
-
+        createMessageMutation.mutate({
+            ...data,
+            imageUrl: upload.stagedUrl ?? undefined
+        })
     }
 
     return (
@@ -59,7 +64,7 @@ const MessageInput = ({channelId }:ImessageInputProps) => {
                     control={form.control}
                     render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                            <MessageComposer key={editorKey} value={field.value} onChange={field.onChange} onSubmit={() =>onSubmit(form.getValues())} isPending={createMessageMutation.isPending} />
+                            <MessageComposer key={editorKey} upload={upload} value={field.value} onChange={field.onChange} onSubmit={() =>onSubmit(form.getValues())} isPending={createMessageMutation.isPending} />
                             {fieldState.invalid && ( <FieldError errors={[fieldState.error]} /> )}
                         </Field>
                     )}

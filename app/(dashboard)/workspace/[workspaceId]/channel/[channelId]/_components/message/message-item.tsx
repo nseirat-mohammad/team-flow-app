@@ -42,6 +42,19 @@ export const MessageItem = ({ message }: IMessageItemProps) => {
             <SafeContent 
             safeClassName='text-sm break-words prose dark:prose-invert max-w-none marker:text-primary' 
             content={JSON.parse(content)} />
+
+            {/* Display the Image */}
+            {message.imageUrl && (
+              <div className='mt-3'>
+                <Image
+                src={message.imageUrl}
+                alt='Message Item'
+                width={500}
+                height={500}
+                className="rounded-md object-contain max-h-[350px] w-auto"
+                />
+              </div>
+            )}
       </div>
     </div>
   )

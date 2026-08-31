@@ -152,45 +152,21 @@ const MessagesList = () => {
         if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current)
     }
 
-    const lastMessage = items[items.length - 1]
-    const lastMessageDate = lastMessage ? new Date(lastMessage.createdAt) : null
-    const showTrailingTodayIndicator = !isLoading && (!lastMessageDate || !isSameDay(lastMessageDate, now))
 
+    const showTrailingTodayIndicator = !isLoading && items.length === 0
     return (
         <div className='h-full relative bg-[#FCF5EB] dark:bg-[#141210]'>
-            <div ref={scrollRef} onScroll={handleScroll} className='overflow-y-auto px-4 h-full workspace-scroll'>
-                    {/* {items && items.map((message, index) => {
+            <div ref={scrollRef} onScroll={handleScroll} className='overflow-y-auto px-4 h-full flex flex-col space-y-1 workspace-scroll'>
+
+                {items && items.map((message, index) => {
                     const currentDate = new Date(message.createdAt)
                     const previousMessage = items[index - 1]
                     const previousDate = previousMessage ? new Date(previousMessage.createdAt) : null
                     const showDateSeparator = !previousDate || !isSameDay(currentDate, previousDate)
-
-                    return (
-                        <div key={message.id}>
-                                {showDateSeparator && (
-                                <div className="sticky top-2 z-10 flex items-center justify-center gap-3 my-4 px-4">
-                                    <div className="flex-1 h-px bg-gradient-to-r from-transparent to-primary" />
-                                    <span className="shrink-0 bg-background/95 backdrop-blur-sm text-muted-foreground text-xs font-medium px-3 py-1 rounded-full shadow-sm border border-border">
-                                        {formatDateSeparator(currentDate)}
-                                    </span>
-                                    <div className="flex-1 h-px bg-gradient-to-l from-transparent to-primary" />
-                                </div>
-                            )}
-                            <MessageItem message={message} />
-                        </div>
-                    )
-                })} */}
-
-                                {items && items.map((message, index) => {
-                    const currentDate = new Date(message.createdAt)
-                    const previousMessage = items[index - 1]
-                    const previousDate = previousMessage ? new Date(previousMessage.createdAt) : null
-                    const showDateSeparator = !previousDate || !isSameDay(currentDate, previousDate)
-
                     return (
                         <div key={message.id}>
                             {showDateSeparator && (
-                                <div className="sticky top-2 z-10 flex items-center justify-center gap-3 my-4 px-4">
+                                <div className="z-10 flex items-center justify-center gap-3 my-4 px-4">
                                     <div className="flex-1 h-px bg-gradient-to-r from-transparent to-primary" />
                                     <span className="shrink-0 bg-background/95 backdrop-blur-sm text-muted-foreground text-xs font-medium px-3 py-1 rounded-full shadow-sm border border-border">
                                         {formatDateSeparator(currentDate)}
