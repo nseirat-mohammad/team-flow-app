@@ -6,8 +6,10 @@ import { orpc } from "@/lib/orpc"
 import { useChannelId } from "@/lib/hooks/channels/use-channel-id";
 import { Message } from "@/lib/generated/prisma/client";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, Loader, MessageCircleOff } from "lucide-react";
 import { formatDateSeparator, isSameDay } from "@/lib/helpers";
+import { EmptyState } from "@/components/shared/empty-state";
+import { FloatingStatusIndicator } from "@/components/shared/floating-indicator";
 
 const MessagesList = () => {
     const channelId = useChannelId()
@@ -21,8 +23,21 @@ const MessagesList = () => {
     const [buttonMounted, setButtonMounted] = useState<boolean>(false);
     const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastItemIdRef = useRef<string | undefined>(undefined);
+    const [now, setNow] = useState<Date>(new Date());
 
-        const [now, setNow] = useState<Date>(new Date());
+//! reset all scroll-related state whenever we switch channels, otherwise
+//! leftover state (ex: hasInitialScroll=true from an empty channel) causes
+//! a visible animated scroll instead of an instant jump on the next channel
+useEffect(() => {
+    setHasInitialScroll(false)
+    setIsAtBottom(false)
+    setNewMessages(false)
+    setNewMessagesCount(0)
+    setShowTooltip(false)
+    setButtonMounted(false)
+    lastItemIdRef.current = undefined
+    if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current)
+}, [channelId])
 
     // ! نجدول تحديث واحد بالظبط عند منتصف الليل، ثم نعيد الجدولة لليوم التالي
     useEffect(() => {
@@ -60,22 +75,71 @@ const MessagesList = () => {
         })
     })
 
-    const { data, hasNextPage, fetchNextPage, isFetchingNextPage, isLoading, isFetching } = useInfiniteQuery({
+    const { data, hasNextPage, fetchNextPage, 
+        isFetchingNextPage, isLoading, isFetching,error } = useInfiniteQuery({
         ...infiniteOptions,
         staleTime: 30_000,
         refetchOnWindowFocus: false
     })
 
+    //* Scroll to the bottom when the message in the first load:
     useEffect(() => {
         if (!hasInitialScroll && data?.pages.length) {
             const el = scrollRef.current
             if (el) {
-                el.scrollTop = el.scrollHeight
+                bottomRef.current?.scrollIntoView({block:"end", behavior:"auto"})
                 setHasInitialScroll(true)
                 setIsAtBottom(true)
             }
         }
     }, [hasInitialScroll, data?.pages.length])
+    //! keep view pinned at the bottom when late content load (ex: Image.)
+    useEffect(() =>{
+        const el = scrollRef.current
+        if(!el) return;
+        const scrollToTheBottomIfNeeded = () =>{
+            if(isAtBottom || !hasInitialScroll){
+                requestAnimationFrame(() =>{
+                    bottomRef.current?.scrollIntoView({block:"end",  behavior: hasInitialScroll ? "smooth" : "auto" })
+                })
+            }
+        }
+
+        //! function when image Load:
+        const onImageLoad = (e : Event) =>{
+            if(e.target instanceof HTMLImageElement){
+                scrollToTheBottomIfNeeded()
+            }
+        }
+        el.addEventListener("load",onImageLoad,true)
+
+        //! resizeObserver to detect when the content is resized and changed in the container:
+        const resizeObserver = new ResizeObserver(() =>{
+            scrollToTheBottomIfNeeded()
+        })
+        resizeObserver.observe(el)
+
+        //! mutationObserver to detect any changes in the DOM that may affect the scroll position (ex: image loading, content update):
+        const mutationObserver = new MutationObserver(() =>{
+            scrollToTheBottomIfNeeded()
+        })
+        //! register the mutationObserver
+        mutationObserver.observe(el,{
+            childList:true,
+            subtree:true,
+            attributes:true,
+            characterData: true
+        })
+
+        //! cleanup functions
+        return () => {
+            el.removeEventListener("load",onImageLoad,true)
+            resizeObserver.disconnect()
+            mutationObserver.disconnect()
+        }
+    },[isAtBottom, hasInitialScroll])
+
+  
 
     const handleScroll = () => {
         const el = scrollRef.current
@@ -143,7 +207,7 @@ const MessagesList = () => {
     const handleScrollToBottom = () => {
         const el = scrollRef.current
         if (!el) return;
-        el.scrollTo({ top: el.scrollHeight, behavior: "smooth" })
+        bottomRef.current?.scrollIntoView({block:"end", behavior:"smooth"})
         setNewMessages(false)
         setNewMessagesCount(0)
         setShowTooltip(false)
@@ -153,12 +217,25 @@ const MessagesList = () => {
     }
 
 
-    const showTrailingTodayIndicator = !isLoading && items.length === 0
+    // const showTrailingTodayIndicator = !isLoading && items.length === 0
+    const isEmpty = !isLoading && !error && items.length === 0
     return (
         <div className='h-full relative bg-[#FCF5EB] dark:bg-[#141210]'>
             <div ref={scrollRef} onScroll={handleScroll} className='overflow-y-auto px-4 h-full flex flex-col space-y-1 workspace-scroll'>
 
-                {items && items.map((message, index) => {
+{isEmpty ? (
+        <div className="flex items-center justify-center h-full">
+
+            <EmptyState
+            icon={MessageCircleOff}
+            eyebrow="Empty Channel"
+            title={"No messages yet"}
+            description={ "This channel is quiet for now. Be the first to break the ice and start the conversation."}
+        />
+        </div>
+    ):(
+        <>
+            {items && items.map((message, index) => {
                     const currentDate = new Date(message.createdAt)
                     const previousMessage = items[index - 1]
                     const previousDate = previousMessage ? new Date(previousMessage.createdAt) : null
@@ -178,19 +255,13 @@ const MessagesList = () => {
                         </div>
                     )
                 })}
-
-                {showTrailingTodayIndicator && (
-                    <div className="flex items-center justify-center gap-3 my-4 px-4">
-                        <div className="flex-1 h-px bg-gradient-to-r from-transparent to-primary" />
-                        <span className="shrink-0 bg-background/95 backdrop-blur-sm text-muted-foreground text-xs font-medium px-3 py-1 rounded-full shadow-sm border border-border">
-                            {formatDateSeparator(now)}
-                        </span>
-                        <div className="flex-1 h-px bg-gradient-to-l from-transparent to-primary" />
-                    </div>
-                )}
+        </>
+    )}
                 <div ref={bottomRef}></div>
             </div>
 
+            //* Message Indicator:
+                {isFetchingNextPage && (<FloatingStatusIndicator icon={Loader} label="loading more messages..."/>)}
             {newMessages && (
                 <div className="absolute bottom-4 right-4 flex items-center gap-0">
                     <div

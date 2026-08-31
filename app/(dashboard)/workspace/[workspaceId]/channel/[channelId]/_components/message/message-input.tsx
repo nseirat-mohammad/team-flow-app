@@ -7,8 +7,8 @@ import { Controller, useForm } from 'react-hook-form'
 import MessageComposer from './message-composer';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { orpc } from '@/lib/orpc';
-import { toastSuccess } from '@/components/shared/toast';
-import { useState } from 'react';
+import { toastError, toastSuccess } from '@/components/shared/toast';
+import { useEffect, useState } from 'react';
 import { useAttachmentImage } from '@/lib/hooks/attchImage/use-attach-Image';
 
 
@@ -29,6 +29,12 @@ const MessageInput = ({channelId }:ImessageInputProps) => {
         }
     })
 
+    useEffect(() => {
+        form.setValue("imageUrl", upload.stagedUrl ?? undefined, {
+            shouldValidate: !!form.formState.errors.content, // Re-validate immediately if there was an error before
+        })
+    }, [upload.stagedUrl])
+
 
     //* create mutation to mutate the orpc:
     const createMessageMutation = useMutation(
@@ -42,14 +48,37 @@ const MessageInput = ({channelId }:ImessageInputProps) => {
                 setEditorKey((prev) => prev + 1)
                 toastSuccess({ title: "success!", description: "Message created successfully!" })
             },
-            onError:() =>{
-                toastSuccess({ title: "Error!", description: "Something went wrong!" })
+            onError: (error) => {
+                //! لو الخطأ جاي من فشل الـ validation بالسيرفر (zod issues)
+                const issues = (error as any)?.data?.issues as
+                    | { path: (string | number)[]; message: string }[]
+                    | undefined
+
+                if (issues?.length) {
+                    //! نطلع توست برسائل كل الأخطاء مجمّعة
+                    toastError({
+                        title: "Input validation failed",
+                        description: issues.map((i) => i.message).join(" • "),
+                    })
+                    return
+                }
+                toastError({ title: "Error!", description: error.message || "Something went wrong!" })
             },
-        })
-    )
+        }))
 
     //! Handle form submission (create new Message)
     const onSubmit = (data:CreateMessageType) =>{
+           const trimmedContent = data.content.trim()
+        const hasImage = !!upload.stagedUrl
+
+        //! لازم يكون فيه نص فعلي (مو مسافات بس) أو صورة، وإلا نمنع الإرسال ونطلع توست
+        if (!trimmedContent && !hasImage) {
+            toastError({
+                title: "Empty message",
+                description: "Please write a message or attach an image before sending.",
+            })
+            return
+        }
         createMessageMutation.mutate({
             ...data,
             imageUrl: upload.stagedUrl ?? undefined
