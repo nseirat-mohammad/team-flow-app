@@ -1,8 +1,11 @@
 import RichTextEditor from '@/components/shared/rich-text-editor/Editor'
+import ImageUploadModal from '@/components/shared/rich-text-editor/image-upload-modal'
 import SendButton from '@/components/shared/send-button'
 import { Button } from '@/components/ui/button'
+import { type UseAttachmentImageType } from '@/lib/hooks/attchImage/use-attach-Image'
 import { cn } from '@/lib/utils'
 import { ImageUp } from 'lucide-react'
+import ImageView from './image-view'
 
 
 interface IMessageComposerProps {
@@ -10,18 +13,24 @@ interface IMessageComposerProps {
     onChange: (value: string) => void
     onSubmit : () => void
     isPending: boolean
+    upload: UseAttachmentImageType
 }
 
-const MessageComposer = ({ value, onChange, onSubmit, isPending }:IMessageComposerProps) => {
+const MessageComposer = ({ value, onChange, onSubmit, isPending,upload }:IMessageComposerProps) => {
     return (
         <>
             <RichTextEditor field={{ value, onChange }} 
             sendButton={<SendButton showLabel onClick={onSubmit} isPending={isPending} />}
             footerLeft={
-                <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => {}}
+                upload.stagedUrl ? (
+                    <ImageView stagedUrl={upload.stagedUrl} onRemove={upload.clearUrl} />
+                ):(
+                    <ImageUploadModal
+                onUploadedUrl={(url) => upload.uploadedUrl(url)}
+                open={upload?.isOpen}
+                onOpenChange={upload.setIsOpen}
+                triggerImageUpload={
+                    <Button type="button"size="sm" onClick={() =>upload.setIsOpen(true)}
                     className={cn(
                         'flex items-center gap-2 rounded-md px-4',
                         'bg-violet-500/10 text-violet-600 border border-violet-500/20',
@@ -34,7 +43,9 @@ const MessageComposer = ({ value, onChange, onSubmit, isPending }:IMessageCompos
                     <ImageUp className="size-4" />
                     <span className="text-sm font-medium">Attach</span>
                 </Button>
-}
+            }/>
+                )
+                }
             />
         </>
     )
