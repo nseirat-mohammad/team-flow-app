@@ -10,7 +10,7 @@ import { useParams } from 'next/navigation'
 const ChannelsList = () => {
     const { workspaceId,channelId} = useParams<{ workspaceId: string,channelId: string }>()
     const { channels: ChannelListData } = useChannelsList();
-
+    
     return (
         <>
             <CollapsibleWrapper defaultOpen title={"Channels"} triggerClassName='uppercase bg-primary/5 border-b border-primary/50  font-semibold uppercase tracking-wide'>

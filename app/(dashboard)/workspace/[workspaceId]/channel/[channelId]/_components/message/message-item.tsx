@@ -1,14 +1,16 @@
 import SafeContent from '@/components/shared/rich-text-editor/safe-content'
 import { Message } from '@/lib/generated/prisma/client'
-import { getAvatar } from '@/lib/helpers'
+import { getAvatar, hasVisibleText } from '@/lib/helpers'
 import Image from 'next/image'
 
 export interface IMessageItemProps {
   message: Message
 }
-
+  
 export const MessageItem = ({ message }: IMessageItemProps) => {
   const {authorAvatar, authorEmail, authorName, content, createdAt} = message
+  const parsedContent = content?.trim() ? JSON.parse(content) : null
+  const showTextContent = parsedContent && hasVisibleText(parsedContent)
   return (
     <div className="flex items-start gap-3 group mt-4 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] px-3 py-2 rounded-lg transition-all duration-200">
       <Image
@@ -39,13 +41,14 @@ export const MessageItem = ({ message }: IMessageItemProps) => {
             </span>
           </div>
         </div>
+        {showTextContent && (
             <SafeContent 
             safeClassName='text-sm break-words prose dark:prose-invert max-w-none marker:text-primary' 
-            content={JSON.parse(content)} />
-
+            content={parsedContent} />
+          )}
             {/* Display the Image */}
             {message.imageUrl && (
-              <div className='mt-3'>
+              <div className={showTextContent ? "mt-3" : "mt-2"}>
                 <Image
                 src={message.imageUrl}
                 alt='Message Item'

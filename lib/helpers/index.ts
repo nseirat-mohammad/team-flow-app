@@ -56,18 +56,20 @@ export const getAvatar = (userPicture: string | null | undefined, userEmail: str
   return userPicture ?? `https://avatar.vercel.sh/${userEmail}`
 }
 
-
 //! Function to Convert Json to Html:
-export const convertJsonToHtml = (jsonContent: JSONContent): string => {
-  try{
+export const convertJsonToHtml = (jsonContent: JSONContent | string | null | undefined): string => {
+  try {
+    if (!jsonContent) return ""
     const content = typeof jsonContent === "string" ? JSON.parse(jsonContent) : jsonContent
+    if (!content || typeof content !== "object") return ""
+    if (content.type !== "doc" || !Array.isArray(content.content)) return ""
+
     //! generate the html :
     return generateHTML(content, baseExtensions)
-  }catch(error){
+  } catch (error) {
     console.error("Error converting JSON to HTML:", error);
     return "";
   }
-
 }
 
 
@@ -90,4 +92,16 @@ export const formatDateSeparator = (date: Date) => {
         month: "long",
         year: "numeric",
     })
+}
+
+
+
+//!  check the visible Text:
+export const hasVisibleText = (node: any): boolean => {
+  if (!node) return false
+  if (node.type === "text" && node.text?.trim()) return true
+  if (Array.isArray(node.content)) {
+    return node.content.some((child: any) => hasVisibleText(child))
+  }
+  return false
 }
