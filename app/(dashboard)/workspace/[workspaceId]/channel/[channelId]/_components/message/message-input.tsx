@@ -5,18 +5,27 @@ import { Field, FieldError } from '@/components/ui/field';
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Controller, useForm } from 'react-hook-form'
 import MessageComposer from './message-composer';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { InfiniteData, useMutation, useQueryClient } from '@tanstack/react-query';
 import { orpc } from '@/lib/orpc';
 import { toastError, toastSuccess } from '@/components/shared/toast';
 import { useEffect, useState } from 'react';
 import { useAttachmentImage } from '@/lib/hooks/attchImage/use-attach-Image';
+import { Message } from '@/lib/generated/prisma/client';
+import { KindeUser } from '@kinde-oss/kinde-auth-nextjs';
+import { getAvatar } from '@/lib/helpers';
+import { queryKey } from '@/lib/constant';
 
 
 interface ImessageInputProps {
-    channelId: string
+    channelId: string,
+    currentUser: KindeUser<Record<string, unknown>>
 }
 
-const MessageInput = ({channelId }:ImessageInputProps) => {
+type MessagePageProps = {items:Message[], nextCursor?:string};
+type InfiniteMessagePageProps = InfiniteData<MessagePageProps>;
+
+
+const MessageInput = ({channelId ,currentUser}:ImessageInputProps) => {
     const queryClient = useQueryClient()
     const [editorKey, setEditorKey] = useState(0)
     const upload = useAttachmentImage()
@@ -37,20 +46,99 @@ const MessageInput = ({channelId }:ImessageInputProps) => {
 
 
     //* create mutation to mutate the orpc:
+    //! implement optimistic UI:
     const createMessageMutation = useMutation(
         orpc.message.create.mutationOptions({
-            onSuccess:() =>{
-                queryClient.invalidateQueries({
-                    queryKey: orpc.message.list.key({ input:{ channelId }})
+            onMutate: async ({ content,imageUrl }) =>{
+                await queryClient.cancelQueries({
+                    queryKey: queryKey(channelId)
                 })
+
+                //? create snapShot
+                const previousMessages = queryClient.getQueryData<InfiniteMessagePageProps>(
+                    queryKey(channelId)
+                )
+                const tempID = `optimistic-message-${crypto.randomUUID()}`
+
+                //* create Optimistic UI Update:
+                const optimisticMessage:Message = {
+                    id:tempID ,
+                    content,
+                    channelId,
+                    imageUrl: imageUrl ?? null,
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                    authorId: currentUser?.id,
+                    authorName: currentUser?.given_name ?? "Mohammad",
+                    authorEmail: currentUser?.email!,
+                    authorAvatar: getAvatar(currentUser?.picture, currentUser?.email!),
+                }
+
+                //! update the chashe by using setQueryData method:
+                queryClient.setQueryData<InfiniteMessagePageProps>(
+                    queryKey(channelId),
+                    (existingData) =>{
+                        if (!existingData){
+                            return {
+                                pages:[{
+                                    items:[optimisticMessage],
+                                    nextCursor: undefined
+                                }],
+                                pageParams: [undefined]
+                            } satisfies InfiniteMessagePageProps
+                        }
+                        //! get the first Page:
+                        const firstPage = existingData.pages[0] ?? {
+                            items: [],
+                            nextCursor: undefined
+                        }
+
+                        const updatedFirstPage :MessagePageProps = {
+                            ...firstPage,
+                            items:[optimisticMessage, ...firstPage.items]
+                        }
+                        return {
+                            ...existingData,
+                            pages: [updatedFirstPage, ...existingData.pages.slice(1)],
+                        }
+                    }
+                )
+
+                return {
+                    previousMessages,
+                    tempID
+                }
+            },
+
+            onSuccess:(data,_variables,context) =>{
+                queryClient.setQueryData<InfiniteMessagePageProps>(queryKey(channelId), 
+                (existingData) => {
+                    if(!existingData) return existingData
+
+                    const updatedPages = existingData.pages.map((page) =>({
+
+                        ...page,
+                        items: page.items.map((item) => item.id === context.tempID ? {
+                            ...data
+                        } : item)
+                    }));
+                    return {
+                        ...existingData,
+                        pages: updatedPages,
+                    }
+                }
+                )
                 form.reset({channelId,content:""})
                 upload.clearUrl()
                 setEditorKey((prev) => prev + 1)
                 toastSuccess({ title: "success!", description: "Message created successfully!" })
             },
-            onError: (error) => {
+            onError: (_err,_variables,context) => {
+                if(context?.previousMessages){
+                    queryClient.setQueryData(["message.list", channelId], context.previousMessages)
+                }
                 //! لو الخطأ جاي من فشل الـ validation بالسيرفر (zod issues)
-                const issues = (error as any)?.data?.issues as
+                const issues = (_err as any)?.data?.issues as
                     | { path: (string | number)[]; message: string }[]
                     | undefined
 
@@ -62,7 +150,7 @@ const MessageInput = ({channelId }:ImessageInputProps) => {
                     })
                     return
                 }
-                toastError({ title: "Error!", description: error.message || "Something went wrong!" })
+                toastError({ title: "Error!", description: _err.message || "Something went wrong!" })
             },
         }))
 
