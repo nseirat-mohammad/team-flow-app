@@ -10,6 +10,7 @@ import { ArrowDown, Loader, MessageCircleOff } from "lucide-react";
 import { formatDateSeparator, isSameDay } from "@/lib/helpers";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FloatingStatusIndicator } from "@/components/shared/floating-indicator";
+import { queryKey } from "@/lib/constant";
 
 const MessagesList = () => {
     const channelId = useChannelId()
@@ -67,6 +68,7 @@ useEffect(() => {
             cursor: pageParam,
             limit: 30
         }),
+        queryKey : queryKey(channelId),
         initialPageParam: undefined,
         getNextPageParam: (lastPage: { items: Message[]; nextCursor?: string | undefined; }) => lastPage.nextCursor,
         select: (data) => ({
@@ -260,7 +262,6 @@ useEffect(() => {
                 <div ref={bottomRef}></div>
             </div>
 
-            //* Message Indicator:
                 {isFetchingNextPage && (<FloatingStatusIndicator icon={Loader} label="loading more messages..."/>)}
             {newMessages && (
                 <div className="absolute bottom-4 right-4 flex items-center gap-0">

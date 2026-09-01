@@ -176,6 +176,18 @@
     @apply bg-background text-foreground;
   }
 }
+@theme {
+  --animate-shimmer: shimmer 2.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
 
 @keyframes spin-slow {
   from {
