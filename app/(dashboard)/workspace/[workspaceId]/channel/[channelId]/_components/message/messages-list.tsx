@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/shared/empty-state";
 import { FloatingStatusIndicator } from "@/components/shared/floating-indicator";
 import { queryKey } from "@/lib/constant";
 import { Skeleton } from "@/components/shared/skeleton";
+import { ScrollToBottomButton } from "@/components/shared/scroll-to-bottom-button";
 
 const SETTLE_DELAY = 400 // ! مدة الهدوء المطلوبة (ms) قبل ما نسمح للسكرول يكون "smooth"
 
@@ -26,6 +27,7 @@ const MessagesList = () => {
     const [buttonMounted, setButtonMounted] = useState<boolean>(false);
     const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastItemIdRef = useRef<string | undefined>(undefined);
+    const processedMessageIdsRef = useRef<Set<string>>(new Set());
     // const [now, setNow] = useState<Date>(new Date());
 
     // ! refs تعكس أحدث قيمة للـ state بدون الحاجة لإعادة إنشاء الـ observers
@@ -207,32 +209,35 @@ const MessagesList = () => {
         }, 2000)
     }
 
-    useEffect(() => {
-        if (!items.length) return;
+   useEffect(() => {
+    if (!items.length) return;
 
-        const lastId = items[items.length - 1].id
-        const previousLastId = lastItemIdRef.current
-        const el = scrollRef.current
+    const lastId = items[items.length - 1].id
+    const previousLastId = lastItemIdRef.current
+    const el = scrollRef.current
 
-        if (previousLastId && lastId !== previousLastId) {
-            if (el && isAtBottom) {
-                requestAnimationFrame(() => {
-                    el.scrollTop = el.scrollHeight
-                })
-                setNewMessages(false)
-                setNewMessagesCount(0)
-                setButtonMounted(false)
-            } else {
-                if (!newMessages) {
-                    setButtonMounted(true)
-                }
-                setNewMessages(true)
-                setNewMessagesCount((prev) => prev + 1)
-                triggerNewMessageTooltip()
+    // ✅ تخطي الرسائل المعلقة (isPending = true)
+    const isLastMessagePending = (items[items.length - 1] as any)?.isPending
+
+    if (previousLastId && lastId !== previousLastId && !isLastMessagePending) {
+        if (el && isAtBottom) {
+            requestAnimationFrame(() => {
+                el.scrollTop = el.scrollHeight
+            })
+            setNewMessages(false)
+            setNewMessagesCount(0)
+            setButtonMounted(false)
+        } else {
+            if (!newMessages) {
+                setButtonMounted(true)
             }
+            setNewMessages(true)
+            setNewMessagesCount((prev) => prev + 1) // ✅ الآن = 1 فقط
+            triggerNewMessageTooltip()
         }
-        lastItemIdRef.current = lastId
-    }, [items])
+    }
+    lastItemIdRef.current = lastId
+}, [items])
 
     useEffect(() => {
         return () => {
@@ -241,10 +246,11 @@ const MessagesList = () => {
         }
     }, [])
 
+    //! when I have new Messages
     const handleScrollToBottom = () => {
         const el = scrollRef.current
         if (!el) return;
-        bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" })
+        bottomRef.current?.scrollIntoView({ block: "end", behavior: "auto" })
         setNewMessages(false)
         setNewMessagesCount(0)
         setShowTooltip(false)
@@ -253,7 +259,14 @@ const MessagesList = () => {
         if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current)
     }
 
+//! when I click on the button button Indicator:
+    const handlePlainScrollToBottom = () =>{
+        bottomRef.current?.scrollIntoView({block:"end",behavior:"auto"})
+        setIsAtBottom(true)
+    }
+
     const isEmpty = !isLoading && !error && items.length === 0
+    const showScrollToBottomButton = hasInitialScroll && !isAtBottom && !newMessages
     return (
         <div className='h-full relative bg-[#FCF5EB] dark:bg-[#141210]'>
             <div ref={scrollRef} onScroll={handleScroll} className='overflow-y-auto px-4 h-full flex flex-col space-y-1 workspace-scroll'>
@@ -297,40 +310,41 @@ const MessagesList = () => {
             </div>
 
             {isFetchingNextPage && (<FloatingStatusIndicator icon={Loader} label="loading more messages..." />)}
-            {newMessages && (
-                <div className="absolute bottom-4 right-4 flex items-center gap-0">
-                    <div
-                        className={`relative mr-2.5 bg-popover text-popover-foreground text-sm font-medium whitespace-nowrap px-3 py-1.5 rounded-lg shadow-md border border-border transition-all duration-300 ease-out ${
-                            showTooltip
-                                ? "opacity-100 translate-x-0 scale-100"
-                                : "opacity-0 translate-x-2 scale-95 pointer-events-none"
-                        }`}
-                    >
-                        New Message
-                        <span className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 bg-popover border-r border-b border-border rotate-[-45deg]" />
-                    </div>
-
-                    <button
-                        onClick={handleScrollToBottom}
-                        className={`relative cursor-pointer flex items-center justify-center w-12 h-12 shrink-0 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg rounded-full transition-all duration-300 ease-out ${
-                            buttonMounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-3 scale-90"
-                        }`}
-                    >
-                        <ArrowDown className="w-5 h-5 shrink-0" />
-                        <span
-                            className={`absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-primary-foreground text-primary text-[11px] font-semibold leading-none ring-2 ring-primary transition-all duration-300 ease-out ${
-                                !showTooltip && newMessagesCount > 0
-                                    ? "opacity-100 scale-100"
-                                    : "opacity-0 scale-50"
-                            }`}
-                        >
-                            {newMessagesCount}
-                        </span>
-                    </button>
+            {showScrollToBottomButton && (
+                <div className="absolute bottom-4 right-4">
+                    <ScrollToBottomButton
+                        onClick={handlePlainScrollToBottom}
+                        className="hover:scale-105 transition-transform duration-200 animate-in fade-in-0 zoom-in-90 slide-in-from-bottom-2 duration-300"
+                        />
                 </div>
             )}
+
+            {newMessages && (
+                <div className="absolute bottom-4 right-4 flex items-center gap-0">
+                    <div className={`relative mr-2.5 bg-popover text-popover-foreground text-sm font-medium whitespace-nowrap px-3 py-1.5 rounded-lg shadow-md border border-border transition-all duration-300 ease-out ${
+                    showTooltip
+                        ? "opacity-100 translate-x-0 scale-100"
+                        : "opacity-0 translate-x-2 scale-95 pointer-events-none"
+                }`}>
+                    New Message
+                    <span className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 bg-popover border-r border-b border-border rotate-[-45deg]" />
+                </div>
+
+                <ScrollToBottomButton onClick={handleScrollToBottom}
+                    className={`transition-all duration-300 ease-out ${
+                        buttonMounted ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-3 scale-90"
+                    }`} >
+                    <span className={`absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-primary-foreground text-primary text-[11px] font-semibold leading-none ring-2 ring-primary transition-all duration-300 ease-out ${
+                        !showTooltip && newMessagesCount > 0
+                            ? "opacity-100 scale-100"
+                            : "opacity-0 scale-50"
+                    }`}>
+                        {newMessagesCount}
+                    </span>
+                </ScrollToBottomButton>
+            </div>
+            )}
         </div>
-    )
-}
+    )}
 
 export default MessagesList
