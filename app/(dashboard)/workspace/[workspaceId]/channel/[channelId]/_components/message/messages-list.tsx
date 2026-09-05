@@ -1,4 +1,3 @@
-
 "use client";
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { MessageItem } from "./message-item"
@@ -13,6 +12,8 @@ import { FloatingStatusIndicator } from "@/components/shared/floating-indicator"
 import { queryKey } from "@/lib/constant";
 import { Skeleton } from "@/components/shared/skeleton";
 
+const SETTLE_DELAY = 400 // ! مدة الهدوء المطلوبة (ms) قبل ما نسمح للسكرول يكون "smooth"
+
 const MessagesList = () => {
     const channelId = useChannelId()
     const [hasInitialScroll, setHasInitialScroll] = useState<boolean>(false);
@@ -25,21 +26,44 @@ const MessagesList = () => {
     const [buttonMounted, setButtonMounted] = useState<boolean>(false);
     const tooltipTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastItemIdRef = useRef<string | undefined>(undefined);
-    const [now, setNow] = useState<Date>(new Date());
+    // const [now, setNow] = useState<Date>(new Date());
 
-//! reset all scroll-related state whenever we switch channels, otherwise
-//! leftover state (ex: hasInitialScroll=true from an empty channel) causes
-//! a visible animated scroll instead of an instant jump on the next channel
-useEffect(() => {
-    setHasInitialScroll(false)
-    setIsAtBottom(false)
-    setNewMessages(false)
-    setNewMessagesCount(0)
-    setShowTooltip(false)
-    setButtonMounted(false)
-    lastItemIdRef.current = undefined
-    if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current)
-}, [channelId])
+    // ! refs تعكس أحدث قيمة للـ state بدون الحاجة لإعادة إنشاء الـ observers
+    const isAtBottomRef = useRef(isAtBottom)
+    const hasInitialScrollRef = useRef(hasInitialScroll)
+    // ! true يعني ما زلنا في فترة "استقرار" بعد تحميل/تبديل القناة → السكرول يكون auto إجباري
+    const settlingRef = useRef(true)
+    const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    useEffect(() => { isAtBottomRef.current = isAtBottom }, [isAtBottom])
+    useEffect(() => { hasInitialScrollRef.current = hasInitialScroll }, [hasInitialScroll])
+
+    // ! يمدد فترة الاستقرار في كل مرة يصير فيها تغيير (صورة تحمّلت، ارتفاع تغيّر...)
+    const extendSettlingWindow = () => {
+        settlingRef.current = true
+        if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current)
+        settleTimeoutRef.current = setTimeout(() => {
+            settlingRef.current = false
+        }, SETTLE_DELAY)
+    }
+
+    //! reset all scroll-related state whenever we switch channels, otherwise
+    //! leftover state (ex: hasInitialScroll=true from an empty channel) causes
+    //! a visible animated scroll instead of an instant jump on the next channel
+    useEffect(() => {
+        setHasInitialScroll(false)
+        setIsAtBottom(false)
+        setNewMessages(false)
+        setNewMessagesCount(0)
+        setShowTooltip(false)
+        setButtonMounted(false)
+        lastItemIdRef.current = undefined
+        if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current)
+        // ! نعيد ضبط refs الـ scroll فورًا (بدون انتظار الـ effect الخاص بها)
+        isAtBottomRef.current = false
+        hasInitialScrollRef.current = false
+        extendSettlingWindow() // ! نبدأ فترة استقرار جديدة لكل قناة
+    }, [channelId])
 
     // ! نجدول تحديث واحد بالظبط عند منتصف الليل، ثم نعيد الجدولة لليوم التالي
     useEffect(() => {
@@ -54,7 +78,7 @@ useEffect(() => {
             const msUntilMidnight = nextMidnight.getTime() - nowValue.getTime()
 
             return setTimeout(() => {
-                setNow(new Date())
+                // setNow(new Date())
                 timeoutRef.current = scheduleMidnightUpdate()
             }, msUntilMidnight)
         }
@@ -63,13 +87,14 @@ useEffect(() => {
 
         return () => clearTimeout(timeoutRef.current)
     }, [])
+
     const infiniteOptions = orpc.message.list.infiniteOptions({
         input: (pageParam: string | undefined) => ({
             channelId,
             cursor: pageParam,
             limit: 30
         }),
-        queryKey : queryKey(channelId),
+        queryKey: queryKey(channelId),
         initialPageParam: undefined,
         getNextPageParam: (lastPage: { items: Message[]; nextCursor?: string | undefined; }) => lastPage.nextCursor,
         select: (data) => ({
@@ -78,8 +103,8 @@ useEffect(() => {
         })
     })
 
-    const { data, hasNextPage, fetchNextPage, 
-        isFetchingNextPage, isLoading, isFetching,error } = useInfiniteQuery({
+    const { data, hasNextPage, fetchNextPage,
+        isFetchingNextPage, isLoading, isFetching, error } = useInfiniteQuery({
         ...infiniteOptions,
         staleTime: 30_000,
         refetchOnWindowFocus: false
@@ -90,59 +115,69 @@ useEffect(() => {
         if (!hasInitialScroll && data?.pages.length) {
             const el = scrollRef.current
             if (el) {
-                bottomRef.current?.scrollIntoView({block:"end", behavior:"auto"})
+                bottomRef.current?.scrollIntoView({ block: "end", behavior: "auto" })
                 setHasInitialScroll(true)
                 setIsAtBottom(true)
+                // ! نحدّث الـ refs فورًا (بدون انتظار re-render) حتى ما يفوّت أي mutation جاي فورًا بعدها
+                hasInitialScrollRef.current = true
+                isAtBottomRef.current = true
+                extendSettlingWindow() // ! نبدأ عدّاد الاستقرار من هنا (بعد القفزة الفعلية)
             }
         }
     }, [hasInitialScroll, data?.pages.length])
+
     //! keep view pinned at the bottom when late content load (ex: Image.)
-    useEffect(() =>{
+    //! ! ملاحظة: هذا الـ effect الآن يشتغل مرة واحدة فقط ([]) ويقرأ القيم الحيّة من الـ refs
+    //! ! بدل الاعتماد على state في الـ dependency array، عشان نتجنب مشكلة الـ closures القديمة
+    //! ! اللي كانت تسبب smooth scroll غير مرغوب فيه بعد تبديل القناة مباشرة
+    useEffect(() => {
         const el = scrollRef.current
-        if(!el) return;
-        const scrollToTheBottomIfNeeded = () =>{
-            if(isAtBottom || !hasInitialScroll){
-                requestAnimationFrame(() =>{
-                    bottomRef.current?.scrollIntoView({block:"end",  behavior: hasInitialScroll ? "smooth" : "auto" })
+        if (!el) return;
+
+        const scrollToTheBottomIfNeeded = () => {
+            if (isAtBottomRef.current || !hasInitialScrollRef.current) {
+                const behavior: ScrollBehavior = settlingRef.current ? "auto" : "smooth"
+                requestAnimationFrame(() => {
+                    bottomRef.current?.scrollIntoView({ block: "end", behavior })
                 })
+                // ! أي حركة تصير أثناء فترة الاستقرار تمدد الفترة بدل ما تتحول فورًا لـ smooth
+                if (settlingRef.current) {
+                    extendSettlingWindow()
+                }
             }
         }
 
         //! function when image Load:
-        const onImageLoad = (e : Event) =>{
-            if(e.target instanceof HTMLImageElement){
+        const onImageLoad = (e: Event) => {
+            if (e.target instanceof HTMLImageElement) {
                 scrollToTheBottomIfNeeded()
             }
         }
-        el.addEventListener("load",onImageLoad,true)
+        el.addEventListener("load", onImageLoad, true)
 
         //! resizeObserver to detect when the content is resized and changed in the container:
-        const resizeObserver = new ResizeObserver(() =>{
+        const resizeObserver = new ResizeObserver(() => {
             scrollToTheBottomIfNeeded()
         })
         resizeObserver.observe(el)
 
         //! mutationObserver to detect any changes in the DOM that may affect the scroll position (ex: image loading, content update):
-        const mutationObserver = new MutationObserver(() =>{
+        const mutationObserver = new MutationObserver(() => {
             scrollToTheBottomIfNeeded()
         })
-        //! register the mutationObserver
-        mutationObserver.observe(el,{
-            childList:true,
-            subtree:true,
-            attributes:true,
+        mutationObserver.observe(el, {
+            childList: true,
+            subtree: true,
+            attributes: true,
             characterData: true
         })
 
-        //! cleanup functions
         return () => {
-            el.removeEventListener("load",onImageLoad,true)
+            el.removeEventListener("load", onImageLoad, true)
             resizeObserver.disconnect()
             mutationObserver.disconnect()
         }
-    },[isAtBottom, hasInitialScroll])
-
-  
+    }, [])
 
     const handleScroll = () => {
         const el = scrollRef.current
@@ -164,7 +199,6 @@ useEffect(() => {
     const isNearBottom = (el: HTMLDivElement) =>
         el.scrollHeight - el.scrollTop - el.clientHeight <= 80;
 
-    // ! تشغيل أنيميشن التنبيه "New Message" لمدة ثانيتين، ثم التحول لعرض العداد
     const triggerNewMessageTooltip = () => {
         setShowTooltip(true)
         if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current)
@@ -190,7 +224,6 @@ useEffect(() => {
                 setButtonMounted(false)
             } else {
                 if (!newMessages) {
-                    // ! أول ظهور للزر → تشغيل أنيميشن الدخول ثم التولتيب
                     setButtonMounted(true)
                 }
                 setNewMessages(true)
@@ -204,13 +237,14 @@ useEffect(() => {
     useEffect(() => {
         return () => {
             if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current)
+            if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current)
         }
     }, [])
 
     const handleScrollToBottom = () => {
         const el = scrollRef.current
         if (!el) return;
-        bottomRef.current?.scrollIntoView({block:"end", behavior:"smooth"})
+        bottomRef.current?.scrollIntoView({ block: "end", behavior: "smooth" })
         setNewMessages(false)
         setNewMessagesCount(0)
         setShowTooltip(false)
@@ -219,53 +253,50 @@ useEffect(() => {
         if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current)
     }
 
-
-    // const showTrailingTodayIndicator = !isLoading && items.length === 0
     const isEmpty = !isLoading && !error && items.length === 0
     return (
         <div className='h-full relative bg-[#FCF5EB] dark:bg-[#141210]'>
             <div ref={scrollRef} onScroll={handleScroll} className='overflow-y-auto px-4 h-full flex flex-col space-y-1 workspace-scroll'>
 
-{isLoading ? (
-    <Skeleton isMessageList key={channelId} />
-) : isEmpty ? (
-        <div className="flex items-center justify-center h-full">
-
-            <EmptyState
-            icon={MessageCircleOff}
-            eyebrow="Empty Channel"
-            title={"No messages yet"}
-            description={ "This channel is quiet for now. Be the first to break the ice and start the conversation."}
-        />
-        </div>
-    ):(
-        <>
-            {items && items.map((message, index) => {
-                    const currentDate = new Date(message.createdAt)
-                    const previousMessage = items[index - 1]
-                    const previousDate = previousMessage ? new Date(previousMessage.createdAt) : null
-                    const showDateSeparator = !previousDate || !isSameDay(currentDate, previousDate)
-                    return (
-                        <div key={message.id}>
-                            {showDateSeparator && (
-                                <div className="z-10 flex items-center justify-center gap-3 my-4 px-4">
-                                    <div className="flex-1 h-px bg-gradient-to-r from-transparent to-primary" />
-                                    <span className="shrink-0 bg-background/95 backdrop-blur-sm text-muted-foreground text-xs font-medium px-3 py-1 rounded-full shadow-sm border border-border">
-                                        {formatDateSeparator(currentDate)}
-                                    </span>
-                                    <div className="flex-1 h-px bg-gradient-to-l from-transparent to-primary" />
+                {isLoading ? (
+                    <Skeleton isMessageList key={channelId} />
+                ) : isEmpty ? (
+                    <div className="flex items-center justify-center h-full">
+                        <EmptyState
+                            icon={MessageCircleOff}
+                            eyebrow="Empty Channel"
+                            title={"No messages yet"}
+                            description={"This channel is quiet for now. Be the first to break the ice and start the conversation."}
+                        />
+                    </div>
+                ) : (
+                    <>
+                        {items && items.map((message, index) => {
+                            const currentDate = new Date(message.createdAt)
+                            const previousMessage = items[index - 1]
+                            const previousDate = previousMessage ? new Date(previousMessage.createdAt) : null
+                            const showDateSeparator = !previousDate || !isSameDay(currentDate, previousDate)
+                            return (
+                                <div key={message.id}>
+                                    {showDateSeparator && (
+                                        <div className="z-10 flex items-center justify-center gap-3 my-4 px-4">
+                                            <div className="flex-1 h-px bg-gradient-to-r from-transparent to-primary" />
+                                            <span className="shrink-0 bg-background/95 backdrop-blur-sm text-muted-foreground text-xs font-medium px-3 py-1 rounded-full shadow-sm border border-border">
+                                                {formatDateSeparator(currentDate)}
+                                            </span>
+                                            <div className="flex-1 h-px bg-gradient-to-l from-transparent to-primary" />
+                                        </div>
+                                    )}
+                                    <MessageItem message={message} />
                                 </div>
-                            )}
-                            <MessageItem message={message} />
-                        </div>
-                    )
-                })}
-        </>
-    )}
+                            )
+                        })}
+                    </>
+                )}
                 <div ref={bottomRef}></div>
             </div>
 
-                {isFetchingNextPage && (<FloatingStatusIndicator icon={Loader} label="loading more messages..."/>)}
+            {isFetchingNextPage && (<FloatingStatusIndicator icon={Loader} label="loading more messages..." />)}
             {newMessages && (
                 <div className="absolute bottom-4 right-4 flex items-center gap-0">
                     <div
@@ -276,7 +307,6 @@ useEffect(() => {
                         }`}
                     >
                         New Message
-                        {/* السهم المشير للزر */}
                         <span className="absolute top-1/2 -right-1 -translate-y-1/2 w-2 h-2 bg-popover border-r border-b border-border rotate-[-45deg]" />
                     </div>
 
@@ -287,8 +317,6 @@ useEffect(() => {
                         }`}
                     >
                         <ArrowDown className="w-5 h-5 shrink-0" />
-
-                        {/* البادج: دائرة صغيرة في زاوية الزر، تظهر بعد اختفاء التولتيب */}
                         <span
                             className={`absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-primary-foreground text-primary text-[11px] font-semibold leading-none ring-2 ring-primary transition-all duration-300 ease-out ${
                                 !showTooltip && newMessagesCount > 0
