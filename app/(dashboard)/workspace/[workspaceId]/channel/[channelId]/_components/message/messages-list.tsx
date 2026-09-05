@@ -11,6 +11,7 @@ import { formatDateSeparator, isSameDay } from "@/lib/helpers";
 import { EmptyState } from "@/components/shared/empty-state";
 import { FloatingStatusIndicator } from "@/components/shared/floating-indicator";
 import { queryKey } from "@/lib/constant";
+import { Skeleton } from "@/components/shared/skeleton";
 
 const MessagesList = () => {
     const channelId = useChannelId()
@@ -225,7 +226,9 @@ useEffect(() => {
         <div className='h-full relative bg-[#FCF5EB] dark:bg-[#141210]'>
             <div ref={scrollRef} onScroll={handleScroll} className='overflow-y-auto px-4 h-full flex flex-col space-y-1 workspace-scroll'>
 
-{isEmpty ? (
+{isLoading ? (
+    <Skeleton isMessageList key={channelId} />
+) : isEmpty ? (
         <div className="flex items-center justify-center h-full">
 
             <EmptyState
