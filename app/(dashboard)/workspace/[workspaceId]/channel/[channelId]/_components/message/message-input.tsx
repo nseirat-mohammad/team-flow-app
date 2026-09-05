@@ -131,7 +131,6 @@ const MessageInput = ({channelId ,currentUser}:ImessageInputProps) => {
                 form.reset({channelId,content:""})
                 upload.clearUrl()
                 setEditorKey((prev) => prev + 1)
-                toastSuccess({ title: "success!", description: "Message created successfully!" })
             },
             onError: (_err,_variables,context) => {
                 if(context?.previousMessages){
