@@ -61,7 +61,7 @@ const MessageInput = ({channelId ,currentUser}:ImessageInputProps) => {
                 const tempID = `optimistic-message-${crypto.randomUUID()}`
 
                 //* create Optimistic UI Update:
-                const optimisticMessage:Message = {
+                const optimisticMessage:Message & { isPending?: boolean } = {
                     id:tempID ,
                     content,
                     channelId,
@@ -72,6 +72,7 @@ const MessageInput = ({channelId ,currentUser}:ImessageInputProps) => {
                     authorName: currentUser?.given_name ?? "Mohammad",
                     authorEmail: currentUser?.email!,
                     authorAvatar: getAvatar(currentUser?.picture, currentUser?.email!),
+                    isPending: true, // ✅ أضف هذا
                 }
 
                 //! update the chashe by using setQueryData method:
@@ -119,8 +120,8 @@ const MessageInput = ({channelId ,currentUser}:ImessageInputProps) => {
 
                         ...page,
                         items: page.items.map((item) => item.id === context.tempID ? {
-                            ...data
-                        } : item)
+                            ...data, isPending: false
+                        }: item)
                     }));
                     return {
                         ...existingData,
